@@ -1,0 +1,39 @@
+doctype html
+html
+  head
+    meta charset="utf-8"
+    meta http-equiv="X-UA-Compatible" content="IE=edge;chrome=1"
+    title
+      = article.front_matter["title"] + " - " if defined?(article)
+      = settings.blog_title
+    = feed_tag :atom, "/feed.xml", title: "Atom Feed"
+    = stylesheet_link_tag :all, media: :all
+    = favicon_tag "/images/favicon.ico"
+
+  body
+    header.header
+      .header-inner
+        = link_to "/" do
+          .header-image
+            = image_tag "rejasupotaro.jpg", width: "100", height: "100", class: "header-image-element"
+          .header-text
+            h1.header-text-title
+              = settings.blog_title
+            p.header-text-description
+              = settings.blog_description
+    hr
+
+    .main
+      .main-inner class="#{params[:title] && 'main-inner-single-article'}"
+        = yield
+
+    footer.footer
+      .footer-inner
+        p.footer-copyright
+          ' Copyright &copy; 2013 by
+          = link_to "@rejasupotaro", "http://twitter.com/rejasupotaro", target: "_blank"
+        p.footer-powers
+          ' Powered by
+          = link_to "Github", "https://github.com/r7kamura/r7kamura.github.io"
+          '  &
+          = link_to "Sitespec", "https://github.com/r7kamura/sitespec"

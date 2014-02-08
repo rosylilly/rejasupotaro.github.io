@@ -1,0 +1,62 @@
+@import "modules/mixin";
+
+.main-inner {
+  @include inner;
+}
+
+.main-inner-single-article {
+  background: white;
+}
+
+.list-item {
+  padding: 20px;
+
+  a {
+    text-decoration: none;
+  }
+
+  &:hover {
+    background: #0ae;
+    color: white;
+    transition:.3s;
+  }
+}
+
+.main-articles-element {
+  width: 100%;
+}
+
+.main-article-header {
+  margin-bottom: 4em;
+}
+
+.main-article-header-title {
+  text-align: center;
+}
+
+.main-article-header-date {
+  text-align: center;
+}
+
+.main-article {
+  line-height: 1.9em;
+}
+
+.main-article h2 {
+  margin: 2em 0 0;
+  font-size: 1.4em;
+  line-height: 2;
+  font-weight: normal;
+}
+
+.main-article p {
+  margin: 0;
+}
+
+.main-article p+p {
+  margin: 1em 0 0;
+}
+
+.main-article img {
+  max-width: 100%;
+}

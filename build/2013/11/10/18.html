@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="IE=edge;chrome=1" http-equiv="X-UA-Compatible" />
+    <title>Dependencyを確認する/キャッシュを削除する - Rejasupoem</title><link rel="alternate" type="application/atom+xml" title="Atom Feed" href="/feed.xml" /><link href="/stylesheets/all.css?1391784085" media="all" rel="stylesheet" type="text/css" /><link href="/images/favicon.ico" rel="icon" type="image/ico" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner"><a href="/">
+        <div class="header-image">
+          <img width="100" height="100" class="header-image-element" src="/images/rejasupotaro.jpg?1391784085" />
+        </div>
+        <div class="header-text">
+          <h1 class="header-text-title">
+            Rejasupoem
+          </h1>
+          <p class="header-text-description">
+            marking down about tech.
+          </p>
+        </div></a>
+        
+      </div>
+    </header>
+    <div class="main">
+      <div class="main-inner main-inner-single-article"><article class="main-article">
+  <div class="main-article-header">
+    <h1 class="main-article-header-title">
+      Dependencyを確認する/キャッシュを削除する
+    </h1>
+    <div class="main-article-header-date">
+      2013-11-10
+    </div>
+  </div><h1>Dependencyを確認する</h1>
+
+<p>ビルドしたらNoClassDefFoundErrorと言われた。
+<code>$ gradle :MyProject:dependencies</code> でパッケージに対象ライブラリが含まれてるか確認できる。</p>
+
+<pre><code class="sh">$ gradle :Rebuild:dependencies
+Picked up _JAVA_OPTIONS: -Dfile.encoding=UTF-8
+Relying on packaging to define the extension of the main artifact has been deprecated and is scheduled to be removed in Gradle 2.0
+:Rebuild:dependencies
+
+------------------------------------------------------------
+Project :Rebuild
+------------------------------------------------------------
+
+_DebugApk
++--- com.android.support:appcompat-v7:18.0.0
+|    \--- com.android.support:support-v4:18.0.0
++--- org.roboguice:roboguice:2.0
+|    \--- com.google.inject:guice:3.0
+|         +--- javax.inject:javax.inject:1
+|         +--- aopalliance:aopalliance:1.0
+|         \--- org.sonatype.sisu.inject:cglib:2.2.1-v20090111
+|              \--- asm:asm:3.1
++--- rejasupotaro:async-rss-client:0.0.3
+|    \--- com.loopj.android:android-async-http:1.4.4
+\--- com.squareup:otto:1.3.2
+
+_DebugCompile
++--- com.android.support:appcompat-v7:18.0.0
+|    \--- com.android.support:support-v4:18.0.0
++--- org.roboguice:roboguice:2.0
+|    \--- com.google.inject:guice:3.0
+|         +--- javax.inject:javax.inject:1
+|         +--- aopalliance:aopalliance:1.0
+|         \--- org.sonatype.sisu.inject:cglib:2.2.1-v20090111
+|              \--- asm:asm:3.1
++--- rejasupotaro:async-rss-client:0.0.3
+|    \--- com.loopj.android:android-async-http:1.4.4
+\--- com.squareup:otto:1.3.2
+
+_ReleaseApk
++--- com.android.support:appcompat-v7:18.0.0
+|    \--- com.android.support:support-v4:18.0.0
++--- org.roboguice:roboguice:2.0
+|    \--- com.google.inject:guice:3.0
+|         +--- javax.inject:javax.inject:1
+|         +--- aopalliance:aopalliance:1.0
+|         \--- org.sonatype.sisu.inject:cglib:2.2.1-v20090111
+|              \--- asm:asm:3.1
++--- rejasupotaro:async-rss-client:0.0.3
+|    \--- com.loopj.android:android-async-http:1.4.4
+\--- com.squareup:otto:1.3.2
+
+_ReleaseCompile
++--- com.android.support:appcompat-v7:18.0.0
+|    \--- com.android.support:support-v4:18.0.0
++--- org.roboguice:roboguice:2.0
+|    \--- com.google.inject:guice:3.0
+|         +--- javax.inject:javax.inject:1
+|         +--- aopalliance:aopalliance:1.0
+|         \--- org.sonatype.sisu.inject:cglib:2.2.1-v20090111
+|              \--- asm:asm:3.1
++--- rejasupotaro:async-rss-client:0.0.3
+|    \--- com.loopj.android:android-async-http:1.4.4
+\--- com.squareup:otto:1.3.2
+
+_TestApk
++--- com.squareup:fest-android:1.0.7
+|    \--- org.easytesting:fest-assert-core:2.0M10
+|         \--- org.easytesting:fest-util:1.2.5
+\--- rejasupotaro:robotgirl:0.0.3
+     \--- com.android.support:support-v4:18.0.0
+
+_TestCompile
++--- com.squareup:fest-android:1.0.7
+|    \--- org.easytesting:fest-assert-core:2.0M10
+|         \--- org.easytesting:fest-util:1.2.5
+\--- rejasupotaro:robotgirl:0.0.3
+     \--- com.android.support:support-v4:18.0.0
+
+apk - Classpath packaged with the compiled main classes.
++--- com.android.support:appcompat-v7:18.0.0
+|    \--- com.android.support:support-v4:18.0.0
++--- org.roboguice:roboguice:2.0
+|    \--- com.google.inject:guice:3.0
+|         +--- javax.inject:javax.inject:1
+|         +--- aopalliance:aopalliance:1.0
+|         \--- org.sonatype.sisu.inject:cglib:2.2.1-v20090111
+|              \--- asm:asm:3.1
++--- rejasupotaro:async-rss-client:0.0.3
+|    \--- com.loopj.android:android-async-http:1.4.4
+\--- com.squareup:otto:1.3.2
+
+archives - Configuration for archive artifacts.
+No dependencies
+
+compile - Classpath for compiling the main sources.
++--- com.android.support:appcompat-v7:18.0.0
+|    \--- com.android.support:support-v4:18.0.0
++--- org.roboguice:roboguice:2.0
+|    \--- com.google.inject:guice:3.0
+|         +--- javax.inject:javax.inject:1
+|         +--- aopalliance:aopalliance:1.0
+|         \--- org.sonatype.sisu.inject:cglib:2.2.1-v20090111
+|              \--- asm:asm:3.1
++--- rejasupotaro:async-rss-client:0.0.3
+|    \--- com.loopj.android:android-async-http:1.4.4
+\--- com.squareup:otto:1.3.2
+
+debugApk - Classpath packaged with the compiled debug classes.
+No dependencies
+
+debugCompile - Classpath for compiling the debug sources.
+No dependencies
+
+default - Configuration for default artifacts.
+No dependencies
+
+instrumentTestApk - Classpath packaged with the compiled instrumentTest classes.
++--- com.squareup:fest-android:1.0.7
+|    \--- org.easytesting:fest-assert-core:2.0M10
+|         \--- org.easytesting:fest-util:1.2.5
+\--- rejasupotaro:robotgirl:0.0.3
+     \--- com.android.support:support-v4:18.0.0
+
+instrumentTestCompile - Classpath for compiling the instrumentTest sources.
++--- com.squareup:fest-android:1.0.7
+|    \--- org.easytesting:fest-assert-core:2.0M10
+|         \--- org.easytesting:fest-util:1.2.5
+\--- rejasupotaro:robotgirl:0.0.3
+     \--- com.android.support:support-v4:18.0.0
+
+releaseApk - Classpath packaged with the compiled release classes.
+No dependencies
+
+releaseCompile - Classpath for compiling the release sources.
+No dependencies
+
+BUILD SUCCESSFUL
+
+Total time: 7.674 secs
+</code></pre>
+
+<h1>Dependencyのキャッシュを削除する</h1>
+
+<p>正確には常にre-downloadするという表現が正しい。
+<code>build.gradle</code> に以下を追加する。</p>
+
+<pre><code class="groovy">configurations.all {
+    // check for updates every build
+    resolutionStrategy.cacheChangingModulesFor 0, &#39;seconds&#39;
+}
+</code></pre>
+
+</article>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-copyright">
+          Copyright &copy; 2013 by <a target="_blank" href="http://twitter.com/rejasupotaro">@rejasupotaro</a>
+        </p>
+        <p class="footer-powers">
+          Powered by <a href="https://github.com/r7kamura/r7kamura.github.io">Github</a> & <a href="https://github.com/r7kamura/sitespec">Sitespec</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

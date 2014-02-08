@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="IE=edge;chrome=1" http-equiv="X-UA-Compatible" />
+    <title>ActiveAndroidの初期化時間を4分の1にする - Rejasupoem</title><link rel="alternate" type="application/atom+xml" title="Atom Feed" href="/feed.xml" /><link href="/stylesheets/all.css?1391784085" media="all" rel="stylesheet" type="text/css" /><link href="/images/favicon.ico" rel="icon" type="image/ico" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner"><a href="/">
+        <div class="header-image">
+          <img width="100" height="100" class="header-image-element" src="/images/rejasupotaro.jpg?1391784085" />
+        </div>
+        <div class="header-text">
+          <h1 class="header-text-title">
+            Rejasupoem
+          </h1>
+          <p class="header-text-description">
+            marking down about tech.
+          </p>
+        </div></a>
+        
+      </div>
+    </header>
+    <div class="main">
+      <div class="main-inner main-inner-single-article"><article class="main-article">
+  <div class="main-article-header">
+    <h1 class="main-article-header-title">
+      ActiveAndroidの初期化時間を4分の1にする
+    </h1>
+    <div class="main-article-header-date">
+      2013-12-05
+    </div>
+  </div><h1>ActiveAndroidとは</h1>
+
+<p><a href="http://www.activeandroid.com/">ActiveAndroid</a>とは、アクティブレコードパターンのAndroidのORMです。</p>
+
+<p>こういうクエリーがあったら</p>
+
+<pre><code class="sql">INSERT INTO Items(id, name) VALUES(NULL, &#39;My Item&#39;);
+</code></pre>
+
+<p>こう書けます。</p>
+
+<pre><code class="java">Item item = new Item();
+item.name = &quot;My Item&quot;;
+item.save();
+</code></pre>
+
+<p>セレクトするときにこうしていたのは、</p>
+
+<pre><code class="sql">SELECT * FROM Items;
+</code></pre>
+
+<p>このようになります。</p>
+
+<pre><code class="java">new Select().from(Item.class).execute();
+</code></pre>
+
+<p>※公式ドキュメントより</p>
+
+<p>DBの接続もテーブルの作成もマイグレーションも、なんでもActiveAndroidが面倒を見てくれます！<br>
+<strong>ん？今なんでもっていったよね？</strong></p>
+
+<h1>初期化と破棄</h1>
+
+<pre><code class="java">public class MyApplication extends Application {
+  @Override
+  public void onCreate() {
+    super.onCreate();
+    ActiveAndroid.initialize(this); // ここでなんでもします！
+  }
+  @Override
+  public void onTerminate() {
+    super.onTerminate();
+    ActiveAndroid.dispose();
+  }
+}
+</code></pre>
+
+<p>※公式ドキュメントより</p>
+
+<h1>ボトルネックを探す</h1>
+
+<p>Traceviewで表示してみる。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/54255753/blog/201312/traceview.png" alt=""></p>
+
+<p>Invocation Countが1でInclusive Timeの80.1%を持っていっている <code>ModelInfo#scanForModel</code> が重いのでソースを見る。</p>
+
+<pre><code class="java">private void scanForModel(Context context) throws IOException {
+  String packageName = context.getPackageName();
+  String sourcePath = context.getApplicationInfo().sourceDir;
+  List&lt;String&gt; paths = new ArrayList&lt;String&gt;();
+
+  if (sourcePath != null &amp;&amp; !(new File(sourcePath).isDirectory())) {
+    DexFile dexfile = new DexFile(sourcePath);
+    Enumeration&lt;String&gt; entries = dexfile.entries();
+
+    while (entries.hasMoreElements()) {
+      paths.add(entries.nextElement());
+    }
+  }
+  // Robolectric fallback
+  else {
+    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    Enumeration&lt;URL&gt; resources = classLoader.getResources(&quot;&quot;);
+
+    while (resources.hasMoreElements()) {
+      String path = resources.nextElement().getFile();
+      if (path.contains(&quot;bin&quot;) || path.contains(&quot;classes&quot;)) {
+        paths.add(path);
+      }
+    }
+  }
+
+  for (String path : paths) {
+    File file = new File(path);
+    scanForModelClasses(file, packageName, context.getClassLoader());
+  }
+}
+
+private void scanForModelClasses(File path, String packageName, ClassLoader classLoader) {
+  if (path.isDirectory()) {
+    for (File file : path.listFiles()) {
+      scanForModelClasses(file, packageName, classLoader);
+    }
+  }
+  else {
+    String className = path.getName();
+
+    // Robolectric fallback
+    if (!path.getPath().equals(className)) {
+      className = path.getPath();
+
+      if (className.endsWith(&quot;.class&quot;)) {
+        className = className.substring(0, className.length() - 6);
+      }
+      else {
+        return;
+      }
+
+      className = className.replace(&quot;/&quot;, &quot;.&quot;);
+
+      int packageNameIndex = className.lastIndexOf(packageName);
+      if (packageNameIndex &lt; 0) {
+        return;
+      }
+
+      className = className.substring(packageNameIndex);
+    }
+
+    try {
+      Class&lt;?&gt; discoveredClass = Class.forName(className, false, classLoader);
+      if (ReflectionUtils.isModel(discoveredClass)) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+        Class&lt;? extends Model&gt; modelClass = (Class&lt;? extends Model&gt;) discoveredClass;
+        mTableInfos.put(modelClass, new TableInfo(modelClass));
+      }
+      else if (ReflectionUtils.isTypeSerializer(discoveredClass)) {
+        TypeSerializer instance = (TypeSerializer) discoveredClass.newInstance();
+        mTypeSerializers.put(instance.getDeserializedType(), instance);
+      }
+    }
+    catch (ClassNotFoundException e) {
+      Log.e(&quot;Couldn&#39;t create class.&quot;, e);
+    }
+    catch (InstantiationException e) {
+      Log.e(&quot;Couldn&#39;t instantiate TypeSerializer.&quot;, e);
+    }
+    catch (IllegalAccessException e) {
+      Log.e(&quot;IllegalAccessException&quot;, e);
+    }
+  }
+}
+</code></pre>
+
+<p>まとめると、</p>
+
+<ol>
+<li>DexFileからすべてのクラスパスを抽出して</li>
+<li>クラスローダーでクラスをロードして</li>
+<li>対象クラスがModelクラスのサブクラスか判定してTableInfoに渡す</li>
+</ol>
+
+<p>などの処理をしています。
+なので、この処理を飛ばすようにします。</p>
+
+<h1>初期化時間の比較</h1>
+
+<p><code>Application#onCreate</code> から <code>MainActivity#onCreate</code> まで</p>
+
+<h2>パターン1</h2>
+
+<p>ActiveAndroidナシ(比較のため)</p>
+
+<pre><code class="java">public class AASampleApplication extends Application {
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Debug.startMethodTracing(&quot;aasample&quot;);
+    }
+}
+</code></pre>
+
+<h2>パターン2</h2>
+
+<p>ActiveAndroid.initialize(Context) で初期化</p>
+
+<pre><code class="java">public class AASampleApplication extends Application {
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Debug.startMethodTracing(&quot;aasample.before&quot;);
+        ActiveAndroid.initialize(this);
+    }
+}
+</code></pre>
+
+<h2>パターン3</h2>
+
+<p>ActiveAndroid#initialize(Configuration) で初期化</p>
+
+<pre><code class="java">public class AASampleApplication extends Application {
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Debug.startMethodTracing(&quot;aasample.after&quot;);
+        Configuration conf = new Configuration.Builder(this)
+                .setModelClasses(User.class)
+                .create();
+        ActiveAndroid.initialize(conf);
+    }
+}
+</code></pre>
+
+<h1>測定結果</h1>
+
+<p><img src="https://dl.dropboxusercontent.com/u/54255753/blog/201312/initialize.png" alt=""></p>
+
+<h1>まとめ</h1>
+
+<ul>
+<li>利便性とパフォーマンスはトレードオフの関係になる場合が多い。</li>
+<li>ライブラリを読むといいことがある。</li>
+</ul>
+
+</article>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-copyright">
+          Copyright &copy; 2013 by <a target="_blank" href="http://twitter.com/rejasupotaro">@rejasupotaro</a>
+        </p>
+        <p class="footer-powers">
+          Powered by <a href="https://github.com/r7kamura/r7kamura.github.io">Github</a> & <a href="https://github.com/r7kamura/sitespec">Sitespec</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

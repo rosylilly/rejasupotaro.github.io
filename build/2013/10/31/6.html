@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="IE=edge;chrome=1" http-equiv="X-UA-Compatible" />
+    <title>モヒートはモッキングフレームワークで味はとても美味しい - Rejasupoem</title><link rel="alternate" type="application/atom+xml" title="Atom Feed" href="/feed.xml" /><link href="/stylesheets/all.css?1391784084" media="all" rel="stylesheet" type="text/css" /><link href="/images/favicon.ico" rel="icon" type="image/ico" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner"><a href="/">
+        <div class="header-image">
+          <img width="100" height="100" class="header-image-element" src="/images/rejasupotaro.jpg?1391784084" />
+        </div>
+        <div class="header-text">
+          <h1 class="header-text-title">
+            Rejasupoem
+          </h1>
+          <p class="header-text-description">
+            marking down about tech.
+          </p>
+        </div></a>
+        
+      </div>
+    </header>
+    <div class="main">
+      <div class="main-inner main-inner-single-article"><article class="main-article">
+  <div class="main-article-header">
+    <h1 class="main-article-header-title">
+      モヒートはモッキングフレームワークで味はとても美味しい
+    </h1>
+    <div class="main-article-header-date">
+      2013-10-31
+    </div>
+  </div><h1>mojito (モヒート)</h1>
+
+<p><img src="http://dl.dropbox.com/u/54255753/blog/201301/mojito.jpg" alt="">  </p>
+
+<p>モヒートは、キューバ・ハバナ発祥のカクテルの一つ。<br>
+由来は、新大陸として注目されていたアメリカ諸国から得られる富をコントロールする名目で、英国女王エリザベス1世が、スペイン領の都市を略奪する海賊達の手助けをしていた16世紀後半、海賊フランシス・ドレイクの部下であるリチャード・ドレイクが、1586年にモヒートの前身となる飲み物「ドラケ(draque)」をキューバの人々へ伝えた、という説が有力。<br>
+ラムをベースにソーダ、ライム、砂糖、ミントを加えたもの。ミントとソーダの清涼感が暑い夏にぴったりな「夏と言えば」の定番カクテル。  </p>
+
+<p>アーネスト・ヘミングウェイが好んで飲んでいた話は有名である。</p>
+
+<h1><a href="http://code.google.com/p/mockito/">mockito</a> (モヒート)</h1>
+
+<p><img src="http://dl.dropbox.com/u/54255753/blog/201301/mockito.jpg" alt=""></p>
+
+<p>モヒートは、Javaのモックライブラリ。<br>
+モックライブラリは他にもいろいろあるけど <a href="http://code.google.com/p/mockito/wiki/MockitoVSEasyMock">EasyMockと比べても</a> mockitoの方が簡潔に書ける。<br>
+導入するとモヒートを飲んだあとのようにスカッとする。</p>
+
+<p><strong>&quot;Mockito is a mocking framework that tastes really good!&quot;</strong> とのこと。(公式)</p>
+
+<h1>mockitoナシ</h1>
+
+<p>今までのやり方。まずモッククラスを定義して、</p>
+
+<pre><code class="java">import com.android.volley.Network;
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.VolleyError;
+
+public class MockNetwork implements Network {
+    private byte[] mFakeResponseData = null;
+
+    public void setFakeResponseData(byte[] data) {
+        mFakeResponseData = data;
+    }
+
+    @Override
+    public NetworkResponse performRequest(Request&lt;?&gt; request) throws VolleyError {
+        return new NetworkResponse(mFakeResponseData);
+    }
+}
+</code></pre>
+
+<p>テストするときに返したいデータをセットする。</p>
+
+<pre><code class="java">MockNetwork mockNetwork = new MockNetwork();
+mockNetwork.setFakeResponseData(&quot;{\&quot;code\&quot;:200}&quot;.getBytes());
+</code></pre>
+
+<h1>mockitoアリ</h1>
+
+<p>このメソッドが呼ばれたときにこれを返す、とするだけ。</p>
+
+<pre><code class="java">Network mockNetwork = mock(Network.class);
+when(mockNetwork.performRequest(any(Request.class))).
+        thenReturn(new NetworkResponse(&quot;{\&quot;code\&quot;:200}&quot;.getBytes()));
+</code></pre>
+
+<p>インタフェースが統一されることによって、次にテストを書く人が「MockNetworkというクラスがあるらしい、ふむふむ、setFakeResponseDataに渡したbyte列がperformRequestで返ってくるのか」と調べる時間を省くことができる。</p>
+
+<p>特定のオブジェクトの一部のメソッドの振る舞いを変えるときもカンタン。</p>
+
+<pre><code class="groovy">doReturn(new HashMap&lt;String, String&gt;() { { put(&quot;fake&quot;, &quot;foo&quot;); } }).when(spyRequest).getHeaders();
+</code></pre>
+
+<p>ちなみにdependencyを解決できなかったので、jarを落として ./src/instrumentTest/libs/ に配置して以下のようにした。</p>
+
+<pre><code class="groovy">instrumentTestCompile fileTree(dir: &#39;./src/instrumentTest/libs&#39;, include: &#39;*.jar&#39;)
+</code></pre>
+
+<p>モヒートにギョームでもプライベートでもお世話になってる。</p>
+
+<hr>
+
+<p>↑ここまでモヒートの話↑<br>
+↓ここまで他のフレームワークの紹介↓  </p>
+
+<h1><a href="http://square.github.io/fest-android/">Fest Android</a></h1>
+
+<p>安心と信頼の <a href="https://github.com/square">Square</a> 製テストフレームワーク。(Squareが公開してるライブラリは本当にどれもレベルが高い)<br>
+元ネタは <a href="http://fest.easytesting.org/">Fixtures for Easy Software Testing</a> のAndroid拡張となっている。</p>
+
+<h3>REGULAR JUNIT</h3>
+
+<pre><code class="java">assertEquals(View.VISIBLE, layout.getVisibility());
+assertEquals(VERTICAL, layout.getOrientation());
+assertEquals(4, layout.getChildCount());
+assertEquals(SHOW_DIVIDERS_MIDDLE, layout.getShowDividers());
+</code></pre>
+
+<h3>FEST ANDROID</h3>
+
+<pre><code class="java">assertThat(layout).isVisible()
+    .isVertical()
+    .hasChildCount(4)
+    .hasShowDividers(SHOW_DIVIDERS_MIDDLE);
+</code></pre>
+
+<h1><a href="https://github.com/mttkay/calculon">calculon</a></h1>
+
+<p><img src="https://raw.github.com/mttkay/calculon/master/assets/calculon.png" alt=""></p>
+
+<p>こちらも便利メソッドを提供している。</p>
+
+<pre><code class="java">// direct assertion on current activity
+assertThat().inPortraitMode();
+assertThat().viewExists(R.id.launch_bar_button);
+
+// assert specific condition on current activity
+    assertThat().satisfies(new Predicate&lt;Activity&gt;() {
+    public boolean check(Activity target) {
+        return target.isTaskRoot();
+    }
+});
+</code></pre>
+
+<p>Fest Androidとの違いは、calculonはStoryTestを提供しており、画面遷移を伴うストーリーをテストとして実行することができる。</p>
+
+<h1>Robolectric + Spock</h1>
+
+<p>この動画で紹介されているGroovyの元祖PowerAssert系テストフレームワーク <a href="https://code.google.com/p/spock/">Spock</a> を頑張ってAndroidで動かすというもの。</p>
+
+<iframe width="420" height="315" src="//www.youtube.com/embed/aDoQxqO_6rI" frameborder="0" allowfullscreen></iframe>
+
+<p>RobolectricはAndroidのテストをJVM上で実行するためのフレームワークで、AndroidのクラスをJavaのShadowクラスに変換して実行するしくみになっている。
+JVMでテストが実行できるようになるということは、Groovyでもテストが書けるということなので、Robolectricを導入すればSpockも使えるようになる。</p>
+
+<h3>Robolectric</h3>
+
+<pre><code class="java">@Test
+public void testDialogContent() {
+    // given
+    final MainActivity mainActivity = new MainActivity();
+    mainActivity.onCreate(null);
+
+    // when
+    mainActivity.button.performClick();
+
+    // then
+    final ShadowAlertDialog dialog = (ShadowAlertDialog) Robolectric.shadowOf(ShadowDialog.getLatestDialog());
+    Assert.assertEquals(&quot;title&quot;, dialog.getTitle());
+    Assert.assertEquals(&quot;Ok&quot;, dialog.getButton(AlertDialog.BUTTON_POSITIVE).getText());
+    Assert.assertEquals(&quot;Cancel&quot;, dialog.getButton(AlertDialog.BUTTON_NEGATIVE).getText());
+    Assert.assertEquals(&quot;Dismiss&quot;, dialog.getButton(AlertDialog.BUTTON_NEUTRAL).getText());
+    Assert.assertEquals(&quot;Dialog Content&quot;, dialog.getMessage());
+}
+</code></pre>
+
+<h3>Robolectric + Spock</h3>
+
+<pre><code class="groovy">def &quot;should displayed dialog&#39;s button has good text&quot;() {
+    given:
+    def mainActivity = new MainActivity()
+    mainActivity.onCreate(null)
+
+    when:
+    mainActivity.button.performClick()
+    def dialog = (ShadowAlertDialog) Robolectric.shadowOf(ShadowDialog.getLatestDialog());
+
+    then:
+    dialog.getButton(number).text == value
+
+    where:
+    number                      | value
+    AlertDialog.BUTTON_POSITIVE | &quot;Ok&quot;
+    AlertDialog.BUTTON_NEGATIVE | &quot;Cancel&quot;
+    AlertDialog.BUTTON_NEUTRAL  | &quot;Dismiss&quot;
+}
+</code></pre>
+
+<p>導入コスト、学習コスト、効果を鑑みつつ、引き続きテスティングフレームワークをテイスティングしていきます。</p>
+
+</article>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-copyright">
+          Copyright &copy; 2013 by <a target="_blank" href="http://twitter.com/rejasupotaro">@rejasupotaro</a>
+        </p>
+        <p class="footer-powers">
+          Powered by <a href="https://github.com/r7kamura/r7kamura.github.io">Github</a> & <a href="https://github.com/r7kamura/sitespec">Sitespec</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

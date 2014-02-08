@@ -1,0 +1,12 @@
+.main-articles
+  - articles.each.with_index do |article, i|
+    = link_to article.url do
+      .list-item
+        table
+          tr
+            td.main-articles-element
+              h2.main-articles-element-title= article.front_matter["title"]
+              .main-articles-element-date= article.date
+            td
+              img src="images/arrow.png"
+      hr
