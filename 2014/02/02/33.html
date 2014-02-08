@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="IE=edge;chrome=1" http-equiv="X-UA-Compatible" />
+    <title>第7章 型や型クラスを自分で作ろう 後編 - Rejasupoem</title><link rel="alternate" type="application/atom+xml" title="Atom Feed" href="/feed.xml" /><link href="/stylesheets/all.css?1391880487" media="all" rel="stylesheet" type="text/css" /><link href="/images/favicon.ico" rel="icon" type="image/ico" />
+  </head>
+  <body>
+    <link href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css" rel="stylesheet" type="text/css" />
+    <script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+    <script type="text/javascript">
+      hljs.initHighlightingOnLoad();
+    </script>
+    <header class="header">
+      <div class="header-inner"><a href="/">
+        <div class="header-image">
+          <img width="100" height="100" class="header-image-element" src="/images/rejasupotaro.jpg?1391880487" />
+        </div>
+        <div class="header-text">
+          <h1 class="header-text-title">
+            Rejasupoem
+          </h1>
+          <p class="header-text-description">
+            continue to deliver value to customers or die;
+          </p>
+        </div></a>
+        
+      </div>
+    </header>
+    <hr />
+    <div class="main">
+      <div class="main-inner main-inner-single-article"><article class="main-article">
+  <div class="main-article-header">
+    <h1 class="main-article-header-title">
+      第7章 型や型クラスを自分で作ろう 後編
+    </h1>
+    <div class="main-article-header-date">
+      2014-02-02
+    </div>
+  </div><h1>前回やったこと</h1>
+
+<ul>
+<li>データ型の定義</li>
+<li>データ型のエクスポート</li>
+<li>レコード構文</li>
+<li>多相型と型引数</li>
+<li>インスタンスの自動導出</li>
+</ul>
+
+<p><blockquote class="twitter-tweet" lang="en"><a href="{% oembed https://twitter.com/knjname/status/427053066030833664 %}"></a></blockquote><script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<blockquote class="twitter-tweet" lang="en"><a href="{% oembed https://twitter.com/nobkz/status/428789457068646401 %}"></a></blockquote><script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<blockquote class="twitter-tweet" lang="en"><a href="{% oembed https://twitter.com/nida_001/status/428789602015387648 %}"></a></blockquote><script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<blockquote class="twitter-tweet" lang="en"><a href="{% oembed https://twitter.com/tail_y/status/428822946719604736 %}"></a></blockquote><script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<blockquote class="twitter-tweet" lang="en"><a href="{% oembed https://twitter.com/VoQn/status/429091683783806976 %}"></a></blockquote><script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+
+<h1>今回やること</h1>
+
+<ul>
+<li>型シノニム
+
+<ul>
+<li>型シノニムの多相化</li>
+</ul></li>
+<li>再帰的なデータ構造</li>
+<li>演算子の定義</li>
+<li>型クラス
+
+<ul>
+<li>型クラスの定義</li>
+<li>型クラスのサブクラス</li>
+<li>型クラス制約</li>
+<li>多相性</li>
+</ul></li>
+<li>Functor型クラス</li>
+<li>型の種類</li>
+</ul>
+
+<h1>型と新しい型(type and newtype)</h1>
+
+<h2>type</h2>
+
+<p>何章か前に出てきましたが <code>[Char]</code> と <code>String</code> は同値で、交換可能です。
+ghciで <code>:i String</code> としてみてください。</p>
+
+<pre><code class="haskell">&gt; :i String
+type String = [Char]    -- Defined in `GHC.Base&#39;
+</code></pre>
+
+<pre><code class="haskell">type 型構築子 型引数1 型引数2 ... = 元の型
+</code></pre>
+
+<blockquote>
+<p>typeは型のシノニムが定義されているのであって、新しい型が作られている訳ではありません。</p>
+</blockquote>
+
+<p>ちょっと復習ですが、名前、年齢、身長、体重、電話番号を持つUserを表すデータ型は、</p>
+
+<pre><code class="haskell">data User = User String Int Float Float String
+    deriving (Show)
+
+name :: User -> String
+name (User name _ _ _ _ ) = name
+
+age :: User -> Int
+age (User _ age _ _ _) = age
+
+height :: User -> Float
+height (User _ _ height _ _) = height
+
+weight :: User -> Float
+weight (User _ _ _ weight _) = weight
+
+phoneNumber :: User -> String
+phoneNumber (User _ _ _ _ phoneNumber) = phoneNumber
+</code></pre>
+
+<p>このようになって、値構築子(値コンストラクタ)は関数なので <code>:type</code> で型シグネチャを見ることができます。</p>
+
+<pre><code class="haskell">&gt; :t User
+User :: String -> Int -> Float -> Float -> String -> User
+</code></pre>
+
+<p>型シグネチャだけ見ても何を渡せばいいのか分からないということで、レコード構文もやりました。</p>
+
+<pre><code class="haskell">data User = User { name :: String
+                 , age :: Int
+                 , height :: Float
+                 , weight :: Float
+                 , phoneNumber :: String } deriving (Show)
+</code></pre>
+
+<pre><code class="haskell">&gt; :t User
+User :: String -> Int -> Float -> Float -> String -> User
+</code></pre>
+
+<p>typeを使うと下のように表すことができます。</p>
+
+<pre><code class="haskell">type Name = String
+type Age = Int
+type Height = Float
+type Weight = Float
+type PhoneNumber = String
+
+data User = User Name Age Height Weight PhoneNumber
+    deriving (Show)
+
+name :: User -> Name
+name (User name _ _ _ _ ) = name
+
+age :: User -> Age
+age (User _ age _ _ _) = age
+
+height :: User -> Height
+height (User _ _ height _ _) = height
+
+weight :: User -> Weight
+weight (User _ _ _ weight _) = weight
+
+phoneNumber :: User -> PhoneNumber
+phoneNumber (User _ _ _ _ phoneNumber) = phoneNumber
+</code></pre>
+
+<pre><code class="haskell">&gt; :t User
+User :: Name -> Age -> Height -> Weight -> PhoneNumber -> User
+</code></pre>
+
+<p>Haskellにはtypeの他にnewtypeもある。</p>
+
+<h3>newtype</h3>
+
+<pre><code class="haskell">newtype 型構築子 型引数1 型引数2 ... = 値構築子 フィールド
+</code></pre>
+
+<p>次のプログラムは &quot;0123&quot; のような数字列を表す型DigitStringを定義したものです。
+関数atoiは、数字列を整数に変換する関数です。
+引数が数字列であるべきことを強調するために、String型ではなくDigitString型の値を引数に要求します。</p>
+
+<pre><code class="haskell">newtype DigitString = DigitString String
+
+atoi :: DigitString -> Int
+atoi (DigitString xs) = read xs
+</code></pre>
+
+<pre><code class="haskell">&gt; let n = DigitString &quot;99&quot;
+&gt; atoi n
+99
+</code></pre>
+
+<p>typeは、既存の型に別名を付けるもので、newtypeは、値構築子数1、フィールド数1の型専用のdata宣言とでも言うべきもので、既存の型をラップした型を与えます。</p>
+
+<h2>data and type and newtype</h2>
+
+<ul>
+<li><a href="http://hnakamur.blogspot.jp/2011/07/haskelldatatypenewtype.html">Haskellのdataとtypeとnewtypeの違い</a></li>
+<li><a href="http://stackoverflow.com/questions/5889696/difference-between-data-and-newtype-in-haskell">Difference between <code>data</code> and <code>newtype</code> in Haskell</a></li>
+<li><a href="http://stackoverflow.com/questions/18204308/haskell-type-vs-data-constructor">Haskell Type vs Data Constructor</a></li>
+</ul>
+
+<h1>型シノニムの多相化</h1>
+
+<p>前回のおさらい</p>
+
+<blockquote>
+<p>型コンストラクタは型引数を取ることができます。</p>
+</blockquote>
+
+<pre><code class="haskell">&gt; :i Maybe
+data Maybe a = Nothing | Just a
+</code></pre>
+
+<blockquote>
+<p>値コンストラクタが引数を取って新しい値を生み出すものでしたが、同じように型コンストラクタは型引数を取って新しい型を作るものです。
+MaybeにIntを渡すとMaybe Int型が得られますし、MaybeにStringを渡せばMaybe String型が得られます。
+こうすることで、</p>
+</blockquote>
+
+<pre><code class="haskell">data IntMaybe = INothing | IJust Int
+data StringMaybe = SNothing | SJust String
+data ShapeMaybe = ShNothing | ShJust Shape
+</code></pre>
+
+<blockquote>
+<p>のように、中身の型ごとに別々の型にする必要がなくなります。</p>
+</blockquote>
+
+<p>という感じで、型シノニムも多相化することができます。</p>
+
+<pre><code class="haskell">type AssocList k v = [(k, v)]
+</code></pre>
+
+<p>こうすることで、連想リストからキーを検索してくれる関数の型を <code>(Eq k) =&gt; k -> AssocList k v -> Maybe v</code> と書けるようになります。</p>
+
+<h1>haskell-jobqueue</h1>
+
+<p><blockquote class="twitter-tweet" lang="en"><a href="{% oembed https://twitter.com/gree_tech/status/426666332973580288 %}"></a></blockquote><script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+
+<pre><code>-- haskell-jobqueue/src/Network/JobQueue/Types.hs
+data Next a = Next {
+    nextJob :: (Maybe a)
+  , nextForks :: [(a, Maybe UTCTime)]
+  }
+
+type JobResult a = Either Failure (Next a)
+
+setNextJob :: (Unit a) =&gt; a -> (JobResult a) -> (JobResult a)
+setNextJob x (Right next@(Next _ju _xs)) = Right next { nextJob = Just x }
+setNextJob _ jr@(Left _) = jr
+</code></pre>
+
+<p>ジョブとJobResultを引数にして、JobResultのRightだったら次のジョブをセットしたJobResultを返して、LeftだったらそのままJobResultを返す。</p>
+
+<pre><code class="haskell">-- haskell-jobqueue/src/Network/JobQueue/JobQueue.hs
+type FailureHandleFn a = Alert -> String -> String -> Maybe (Job a) -> IO (Maybe (Job a))
+type AfterExecuteHandleFn a = Job a -> IO ()
+
+data (Unit a) =&gt; Settings a = Settings {
+    failureHandleFn :: FailureHandleFn a
+  , afterExecuteFn :: AfterExecuteHandleFn a
+  }
+</code></pre>
+
+<p>長い型をtypeで表したりとかもする。</p>
+
+<h1>再帰的なデータ構造</h1>
+
+<p>時間があったら。</p>
+
+<h1>演算子の定義</h1>
+
+<p>すごいH本138ページあたりの演算子を定義する話。</p>
+
+<p>まず、演算子を定義する。</p>
+
+<pre><code class="haskell">infixr 5 :-:
+data List a = Empty | a :-: (List a ) deriving (Show, Read, Eq, Ord)
+
+infixr 5 ^++
+(^++) :: List a -> List a -> List a
+Empty ^++ ys ys
+(x :-: xs) ^++ ys = x :-: (xs ^++ ys)
+</code></pre>
+
+<p>そして使う。</p>
+
+<pre><code class="haskell">&gt; let a = 3 :-: 4 :-: 5 :-: Empty
+&gt; let b = 6 :-: 7 :-: Empty
+&gt; a ^++ b
+3 :-: (4 :-: (5 :-: (6 :-: (7 :-: Empty))))
+</code></pre>
+
+<p><img src="http://img.tiqav.com/8q.th.jpg" alt=""></p>
+
+<p>これを見てもあまり嬉しいと感じられないと思うので、自分で便利そうな演算子を何か一個、作ってみましょう。</p>
+
+<h3>例. 三項演算子っぽい何か</h3>
+
+<pre><code class="haskell">&gt; [x &gt; 5 ? 1 : 2 | x &lt;- [1..10]]
+&gt; [2,2,2,2,2,1,1,1,1,1]
+</code></pre>
+
+<p>(これは実現できないので、これっぽいなにかを)</p>
+
+<p><a href="http://d.hatena.ne.jp/marony0607/20111205/1323103005">Haskellの演算子について纏めてみた</a></p>
+
+<h1>型クラス</h1>
+
+<p>型クラスはインターフェイスのようなものです。型クラスは、特定の振る舞い(等値性判定だとか、順序の比較だとか、列挙だとか)を定義します。
+定義されたとおりに振る舞うことができる型は、その型クラスのインスタンスである、といいます。</p>
+
+<h2>型クラスの定義</h2>
+
+<p>Eq型クラスを例に取りましょう。
+Eqは等値性判定ができる(<code>==</code> や <code>/=</code>) という関数を定義している)値の型クラスです。
+これは標準ライブラリにおけるEqの定義です。</p>
+
+<pre><code class="haskell">class Eq a where
+  (==) :: a -> a -> Bool
+  (/=) :: a -> a -> Bool
+  x == y = not (x /= y)
+  x /= y = not (x == y)
+</code></pre>
+
+<p>クラスには関数定義と、オプションでデフォルト実装を書くことができます。</p>
+
+<h2>型クラスのサブクラスの定義</h2>
+
+<p>別の型クラスのサブクラスである型クラスを作ることもできます。
+たとえばNumの型クラス宣言の最初のところは以下のようになっています。</p>
+
+<pre><code class="haskell">class (Eq a) =&gt; Num a where
+  ...
+</code></pre>
+
+<p>aはEqの振る舞いを実装している必要もある、というふうになります。</p>
+
+<h2>型クラス制約</h2>
+
+<p>リストの要素の和を求める関数sumの型がもし、</p>
+
+<pre><code class="haskell">sum :: [Int] -> Int
+</code></pre>
+
+<p>では具体的すぎます。かといって、</p>
+
+<pre><code class="haskell">sum :: [a] -> a
+</code></pre>
+
+<p>では広すぎです。そこで、次のような制約付きの宣言が使われます。</p>
+
+<pre><code class="haskell">sum :: Num a =&gt; [a] -> a
+</code></pre>
+
+<p>sumの型シグネチャ宣言におけるNum aは、型aがNumクラスのインスタンスでなければならないという制約を表します。
+この制約は、型クラス制約、あるいは文脈(Context)と呼ばれます。</p>
+
+<h2>インスタンス化</h2>
+
+<p>ここで先週作った曜日のデータ型をみてみましょう。</p>
+
+<blockquote>
+<p>使える自動導出を全部使って、曜日のデータ型を作ってみましょう。</p>
+</blockquote>
+
+<pre><code class="haskell">data Day = Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday deriving (Eq, Ord, Show, Read, Bounded, Enum)
+</code></pre>
+
+<p>Eq、Ord、Show、Read、Bounded、Enumを自動導出していましたが、いくつかを手動で導出してみましょう。</p>
+
+<pre><code class="haskell">data Day = Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday
+
+instance Eq Day where
+  Monday == Monday = True
+  Tuesday == Tuesday = True
+  Wednesday == Wednesday = True
+  Thursday == Thursday = True
+  Friday == Friday = True
+  Saturday == Saturday = True
+  Sunday == Sunday = True
+  _ == _ = False
+
+instance Show Day where
+  show Monday = &quot;Monday&quot;
+  show Tuesday = &quot;Tuesday&quot;
+  show Wednesday = &quot;Wednesday&quot;
+  show Thursday = &quot;Thursday&quot;
+  show Friday = &quot;Friday&quot;
+  show Saturday = &quot;Saturday&quot;
+  show Sunday = &quot;Sunday&quot;
+
+instance Ord Day where
+</code></pre>
+
+<pre><code class="haskell">&gt; Monday == Sunday
+False
+&gt; Monday /= Sunday
+True
+&gt; Friday
+Friday
+&gt; Monday &lt; Tuesday
+...
+</code></pre>
+
+<p>では、まず引数をStringにして返すputs関数を作って、</p>
+
+<pre><code class="haskell">puts :: (Show a) =&gt; a -> String
+puts a = show a
+</code></pre>
+
+<pre><code class="haskell">&gt; puts &#39;a&#39;
+&quot;&#39;a&#39;&quot;
+&gt; puts 1
+&quot;1&quot;
+</code></pre>
+
+<p>それから、IntかCharしか受け取れないように型クラス制約を付けてみましょう。</p>
+
+<pre><code class="haskell">&gt; puts &#39;a&#39;
+&quot;&#39;a&#39;&quot;
+&gt; puts (1 :: Int)
+&quot;1&quot;
+&gt; puts (1 :: Float)
+
+&lt;interactive&gt;:14:1:
+    No instance for (IntOrChar Float)
+      arising from a use of `puts&#39;
+    Possible fix: add an instance declaration for (IntOrChar Float)
+    In the expression: puts (1 :: Float)
+    In an equation for `it&#39;: it = puts (1 :: Float)
+</code></pre>
+
+<h2>多相性</h2>
+
+<ul>
+<li><a href="http://yingtai.hatenablog.com/entry/2012/08/17/215648">Polymorphismまとめ</a></li>
+</ul>
+
+<h3>パラメータ多相(parametric)</h3>
+
+<p>Haskellのリストを例に取ると、</p>
+
+<pre><code class="haskell">length :: [a] -> Int
+length [] = 0
+length (x:xs) = 1 + length xs
+</code></pre>
+
+<pre><code>&gt; length [1,2,3]   -- [Int] -> Int
+3
+&gt; length &quot;foobar&quot;  -- [Char] -> Int
+6
+</code></pre>
+
+<p>この関数のアルゴリズムはリストの中身の型に依存しません。
+言い換えれば、length関数は型に関わらず同じ操作をしています。
+このようなタイプの多相をパラメータ多相と呼びます。</p>
+
+<ul>
+<li>C++のテンプレート</li>
+<li>Javaのジェネリクス</li>
+</ul>
+
+<h3>アドホック多相(ad-hoc)</h3>
+
+<p>Haskellでは型クラスにもとづき、型によって振る舞いを変えることをアドホック多相といいます。</p>
+
+<p>一般的にはアドホック多相にはオーバーロードと型キャストの二つがあります。</p>
+
+<h4>オーバーロード</h4>
+
+<p>Cを例に取ると、</p>
+
+<pre><code class="c">n = 1 + 3;        // 整数の加算
+r = 1.5 + 2.5;    // 実数の加算
+</code></pre>
+
+<p>ここでの <code>+</code> 演算子の振る舞いは多相的ですが、実際の加算アルゴリズムは異なります。
+この意味で、この2つの演算子が同じ <code>+</code> であることの必然性はあまりなく、便宜上そうなっているだけ(ad-hoc)にすぎません。</p>
+
+<h4>型キャスト</h4>
+
+<pre><code class="c">x = 1.5 + 10;
+</code></pre>
+
+<p>このとき <code>+</code> の左側は実数型、右側は整数型です。
+このとき <code>+</code> 演算子は見かけの上でだけ多相的です。</p>
+
+<ul>
+<li>C++/Javaのメソッドのオーバーロード</li>
+</ul>
+
+<h3>部分型多相(inclusion, subtyping)</h3>
+
+<p><code>Dog, Cat ∈ Animal</code> という型の関係があったとき、
+Animal型のオブジェクトにsayメソッドが適用できるならば、
+Dog型、Cat型のオブジェクトにもsayメソッドが適用できる、といった多相です。</p>
+
+<p>オブジェクト指向で主に「多態」と呼ばれるタイプの多相。</p>
+
+<h3>ピンと来ない？</h3>
+
+<p>アドホック多相は、関数を適用する型を制限するのに対して、パラメータ多相は、具体的な型について言及しないことにより、新しい型に対応できるようにするということらしいです。</p>
+
+<ul>
+<li><a href="http://www.nslabs.jp/haskell-poly.rhtml">Haskellでの多態 (多相)</a></li>
+<li><a href="http://chopl.in/blog/2012/11/06/introduction-to-typeclass-with-scala.html">Scalaで型クラス入門</a></li>
+</ul>
+
+<h1>Functor型クラス</h1>
+
+<p>Functor(関手)は、全体を写せる（map over）ものの型クラスです。
+map overと聞いて、リストのmapを思い出しませんか？
+あれも何かを写す操作の典型例です。</p>
+
+<p>Functor型クラスの実装を覗いてみましょう。</p>
+
+<pre><code class="haskell">class Functor f where
+    fmap :: (a -> b) -> f a -> f b
+</code></pre>
+
+<p>見てのとおりFunctorは1つの関数 fmap を持っており、デフォルト実装は提供しておりません。
+どうやらfmapは、「ある型aから別の型bへの関数」と、「ある型aに適用されたファンクター値」を取り、「別の型bの方に適用されたファンクター値」を返す関数のようです。</p>
+
+<p>ところで、fmapの型宣言は何かに似ていると思いませんか？</p>
+
+<pre><code class="haskell">&gt; :t fmap
+fmap :: Functor f =&gt; (a -> b) -> f a -> f b
+&gt; :t map
+map :: (a -> b) -> [a] -> [b]
+</code></pre>
+
+<p>mapは、「ある型から別の型への関数」と、「ある型のリスト」を取り、「別の型のリスト」を返す関数のようです。</p>
+
+<p>実は、リストはFunctor型クラスのインスタンスで、mapというのはリスト限定で動作するfmapなのです。</p>
+
+<pre><code class="haskell">&gt; :i []
+data [] a = [] | a : [a]        -- Defined in `GHC.Types&#39;
+instance Functor [] -- Defined in `GHC.Base&#39;
+...
+
+instance Functor [] where
+    fmap = map
+</code></pre>
+
+<p><img src="https://dl.dropboxusercontent.com/u/949822/qiita.com/131125-functors-applicative-and-monads-in-picture/fmap_list.png" alt=""></p>
+
+<p>リストにとってのfmapはただのmapであるため、2つの関数をリストに使った結果は一致します。</p>
+
+<pre><code class="haskell">&gt; fmap (*2) [1..3]
+[2,4,6]
+&gt; map (*2) [1..3]
+[2,4,6]
+</code></pre>
+
+<p>Functorになれるのは、箱のような働きをする型です。
+リスト以外にも例えばMaybe aがFunctorです。
+MaybeはこんなふうにFunctorになっています。</p>
+
+<pre><code class="haskell">&gt; :i Maybe
+data Maybe a = Nothing | Just a         -- Defined instance Functor Maybe -- Defined in `Data.Maybe&#39;
+...
+
+instance Functor Maybe where
+  fmap f (Just x) = Just (f x)
+  fmap f Nothing = Nothing
+</code></pre>
+
+<p>fmapの実装はいたってシンプルです。
+もし2つ目の引数が値の入ったJustだったら関数をJustの中身に適用して、Nothingだったら、Nothingを返します。</p>
+
+<p><img src="http://yogsototh.github.io/Category-Theory-Presentation/categories/img/mp/boxfunctor.png" width="400"></p>
+
+<pre><code class="haskell">&gt; fmap (++ &quot; HEY GUYS IM INSIDE THE JUST&quot;) (Just &quot;Something serious.&quot;)
+Just &quot;Something serious. HEY GUYS IM INSIDE THE JUST&quot;
+&gt; fmap (++ &quot; HEY GUYS IM INSIDE THE JUST&quot;) Nothing
+Nothing
+&gt; fmap (*2) (Just 200)
+Just 400
+&gt; fmap (*2) Nothing
+Nothing
+</code></pre>
+
+<ul>
+<li><a href="http://qiita.com/suin/items/0255f0637921dcdfe83b">箱で考えるFunctor、ApplicativeそしてMonad</a></li>
+<li><a href="http://ja.wikibooks.org/wiki/Haskell/%E5%9C%8F%E8%AB%96">Haskell/圏論</a></li>
+<li><a href="http://d.hatena.ne.jp/enakai00/20130912/1378970253">Functorを例として、圏論とHaskellの関係を分かりやすく説明してみるテスト</a></li>
+</ul>
+
+<h1>型の種類</h1>
+
+<p><code>[a]</code> や <code>Maybe a</code> のような型コンストラクタは、他の型を引数に取って具体型になります。
+この振る舞いは、関数が値を引数に取って値を生み出すのとよく似ています。
+それに、関数と同じく型コンストラクタも部分適用できます。
+ここでは、型が型コンストラクタに適用される様子を形式的に定義してみます。</p>
+
+<p>3、&quot;YEAH!&quot;、takeWhileといった値（関数も受け取ったり渡したりできる値です）は、それぞれ固有の値を持っています。
+型とは、値について何らかの推測をするための小さなラベルです。
+そして型にも小さなラベルがついています。
+その名は種類（kind）。種類は、「型の型」のようなものです。</p>
+
+<p>ghciの <code>:kind</code> コマンドを使って、型の種類をみてみましょう。</p>
+
+<pre><code class="haskell">&gt; :k Int
+Int :: *
+&gt; :k []
+[] :: * -> *
+&gt; :k Maybe
+Maybe :: * -> *
+</code></pre>
+
+<p><code>*</code> (スター)は、具体型を表す記号です。
+<code>[]</code> や <code>Maybe</code> は1つの具体型(例えばInt)を取って具体型(例えばMaybe Int)を返す型コンストラクタであることが分かります。</p>
+
+<p>型コンストラクタに型引数を与えて、どんな種類の型ができるか調べてみましょう。</p>
+
+<pre><code class="haskell">&gt; :k [Char]
+[Char] :: *
+&gt; :k Maybe Int
+Maybe Int :: *
+</code></pre>
+
+<p>型引数を与えると、具体型になりました。
+型は値のラベルであり、種類は型のラベルである、という対応関係があるわけです。</p>
+
+<p>改めてFunctorの定義を見直すと、型変数fは1つの具体型を取って具体型を生み出す型として使われていることが見て取れます。</p>
+
+<pre><code class="haskell">class Functor f where
+    fmap :: (a -> b) -> f a -> f b
+</code></pre>
+
+<p>関数の型宣言で値の型として使われていることから <code>f a</code> や <code>f b</code> は具体型でなければならないことが分かります。
+Functorになるには <code>* -> *</code> という種類を持つ必要があるということが分かります。</p>
+
+<h1>今後のスケジュール</h1>
+
+<ul>
+<li><a href="http://sugoihaskell.github.io/">sugoihaskell.github.io</a></li>
+</ul>
+
+</article>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-copyright">
+          Copyright &copy; 2013 by <a target="_blank" href="http://twitter.com/rejasupotaro">@rejasupotaro</a>
+        </p>
+        <p class="footer-powers">
+          Powered by <a href="https://github.com/r7kamura/r7kamura.github.io">Github</a> & <a href="https://github.com/r7kamura/sitespec">Sitespec</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

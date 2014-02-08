@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="IE=edge;chrome=1" http-equiv="X-UA-Compatible" />
+    <title>KinMozaView is updated!! - Rejasupoem</title><link rel="alternate" type="application/atom+xml" title="Atom Feed" href="/feed.xml" /><link href="/stylesheets/all.css?1391880487" media="all" rel="stylesheet" type="text/css" /><link href="/images/favicon.ico" rel="icon" type="image/ico" />
+  </head>
+  <body>
+    <link href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css" rel="stylesheet" type="text/css" />
+    <script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+    <script type="text/javascript">
+      hljs.initHighlightingOnLoad();
+    </script>
+    <header class="header">
+      <div class="header-inner"><a href="/">
+        <div class="header-image">
+          <img width="100" height="100" class="header-image-element" src="/images/rejasupotaro.jpg?1391880487" />
+        </div>
+        <div class="header-text">
+          <h1 class="header-text-title">
+            Rejasupoem
+          </h1>
+          <p class="header-text-description">
+            continue to deliver value to customers or die;
+          </p>
+        </div></a>
+        
+      </div>
+    </header>
+    <hr />
+    <div class="main">
+      <div class="main-inner main-inner-single-article"><article class="main-article">
+  <div class="main-article-header">
+    <h1 class="main-article-header-title">
+      KinMozaView is updated!!
+    </h1>
+    <div class="main-article-header-date">
+      2014-02-09
+    </div>
+  </div><h2>きんモザビューワーをアップデートしました！</h2>
+
+<p><img src="https://github.com/rejasupotaro/KinMozaViewer/blob/master/screenshot.png?raw=true" alt=""></p>
+
+<h2>主な変更点は2点！</h2>
+
+<ul>
+<li>自動再生機能を追加しました！</li>
+<li>再生中に画面をスリープしないようにしました！</li>
+</ul>
+
+<p><img src="https://github.com/rejasupotaro/KinMozaViewer/blob/master/screenshot.png?raw=true" alt=""></p>
+
+<p>ダウンロード(というかビルド)は<a href="https://github.com/rejasupotaro/KinMozaViewer">GitHub</a>からどうぞ！</p>
+
+<p><a href="http://localhost:9292/2013/10/31/8.html">リリースしたときに書いたブログ</a>はリンクを貼っただけだったので、ちょっと技術的な話をします。</p>
+
+<h2>gifの表示について</h2>
+
+<p>表示しているgifは<a href="http://mogashi.hateblo.jp/entry/2013/09/24/000619">APIで取得している</a>のですが、Androidでgifを表示するにはかなり頑張らないといけないので、WebViewで表示するようにしました。</p>
+
+<p>assetsにテンプレートを置いておいて、APIで取得したURLと動的に取得した画面幅を組み込んで、loadDataWithBaseURLでコンテンツをWebViewに流しています。</p>
+
+<pre><code class="java">String imageUrl = UrlUtils.buildAliceUrl(ep, no);
+String content = mTemplate.compile(imageUrl);
+loadDataWithBaseURL(&quot;&quot;, content, &quot;text/html&quot;, HTTP.UTF_8, null);
+</code></pre>
+
+<h2>自動再生について</h2>
+
+<p>一定時間おきにタスクを実行するコードをよく書く気がしたので、汎用的なクラスを作りました。
+コンストラクタにRunnableとインターバル値を入れます。</p>
+
+<pre><code class="java">public class PeriodicTimerTask {
+
+    private Handler mHandler = new Handler();
+
+    private Runnable mTask;
+
+    private int mTaskIntervalMs;
+
+    private TimerTask mTimerTask;
+
+    private Timer mTimer;
+
+    private TimerTask newTimerTask() {
+        return new TimerTask() {
+            @Override
+            public void run() {
+                mHandler.post(mTask);
+            }
+        };
+    }
+
+    private Timer newTimer() {
+        return new Timer(true);
+    }
+
+    public PeriodicTimerTask(Runnable task, int taskIntervalMs) {
+        mTask = task;
+        mTaskIntervalMs = taskIntervalMs;
+    }
+
+    public void start() {
+        if (mTimer == null) {
+            mTimerTask = newTimerTask();
+            mTimer = newTimer();
+            mTimer.schedule(mTimerTask, 0, mTaskIntervalMs);
+        }
+    }
+
+    public void stop() {
+        if (mTimer != null) {
+            mTimer.cancel();
+            mTimer = null;
+        }
+    }
+}
+</code></pre>
+
+<p>たとえばこのアプリでは、自動再生モードがオンのとき、SeekBarを一定時間おきに動かしています。</p>
+
+<pre><code class="java">public class MediaTimerTask extends PeriodicTimerTask {
+
+    private static final int TASK_INTERVAL_MS = 500;
+
+    private static final int PROGRESS_INCREMENT = 10;
+
+    public MediaTimerTask(final SeekBar seekBar) {
+        super(new Runnable() {
+            @Override
+            public void run() {
+                if (seekBar == null) {
+                    return;
+                }
+
+                int progress = seekBar.getProgress();
+                if (progress &gt;= seekBar.getMax()) {
+                    progress = 0;
+                } else {
+                    progress += PROGRESS_INCREMENT;
+                }
+                seekBar.setProgress(progress);
+            }
+        }, TASK_INTERVAL_MS);
+    }
+}
+</code></pre>
+
+<p>SeekBarでは進捗(Progress)に変化があったときに、進捗値から何章のどこら辺かを計算して、そのパラメータを付けてAPIを叩いて、画面を更新します。</p>
+
+<h2>アプリをスリープさせない</h2>
+
+<p>MainActivityのonCreate相当のところで下のような処理をしています。</p>
+
+<pre><code class="java">private void keepScreenOn() {
+    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+}
+</code></pre>
+
+<h2>アイコンを作る</h2>
+
+<p>アイコンを作るのに<a href="http://android-ui-utils.googlecode.com/hg/asset-studio/dist/index.html">Android Asset Studio</a>を使おうとするんだけど、Android Asset Studioだと角丸ができないので、調べたら<a href="http://www.gieson.com/Library/projects/utilities/icon_slayer/">Icon Slayer</a>っていうのが出てきて、それを使っています。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/icon_generator.png" alt=""></p>
+
+<h2>効果的な使用方法</h2>
+
+<p>手元のAndroid搭載プロジェクタにこのアプリを入れて、部屋を暗くしてコードを書いてる後ろでエンドレスで再生し続けます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/projector.png" alt=""></p>
+
+<p>6畳に物が散乱している狭い部屋を、生ぬるいくらいの温度にして、プロジェクタとノートPCの光だけが部屋を照らしている中、寝落ちするまでコードを書く。
+よく分からないけどこの生活が癖になってしまって、とにかく昼間眠い。</p>
+
+<p><img src="https://github.com/rejasupotaro/KinMozaViewer/blob/master/screenshot.png?raw=true" alt=""></p>
+
+</article>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-copyright">
+          Copyright &copy; 2013 by <a target="_blank" href="http://twitter.com/rejasupotaro">@rejasupotaro</a>
+        </p>
+        <p class="footer-powers">
+          Powered by <a href="https://github.com/r7kamura/r7kamura.github.io">Github</a> & <a href="https://github.com/r7kamura/sitespec">Sitespec</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

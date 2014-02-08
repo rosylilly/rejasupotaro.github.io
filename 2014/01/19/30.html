@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="IE=edge;chrome=1" http-equiv="X-UA-Compatible" />
+    <title>第7章 型や型クラスを自分で作ろう 前編 - Rejasupoem</title><link rel="alternate" type="application/atom+xml" title="Atom Feed" href="/feed.xml" /><link href="/stylesheets/all.css?1391880487" media="all" rel="stylesheet" type="text/css" /><link href="/images/favicon.ico" rel="icon" type="image/ico" />
+  </head>
+  <body>
+    <link href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css" rel="stylesheet" type="text/css" />
+    <script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+    <script type="text/javascript">
+      hljs.initHighlightingOnLoad();
+    </script>
+    <header class="header">
+      <div class="header-inner"><a href="/">
+        <div class="header-image">
+          <img width="100" height="100" class="header-image-element" src="/images/rejasupotaro.jpg?1391880487" />
+        </div>
+        <div class="header-text">
+          <h1 class="header-text-title">
+            Rejasupoem
+          </h1>
+          <p class="header-text-description">
+            continue to deliver value to customers or die;
+          </p>
+        </div></a>
+        
+      </div>
+    </header>
+    <hr />
+    <div class="main">
+      <div class="main-inner main-inner-single-article"><article class="main-article">
+  <div class="main-article-header">
+    <h1 class="main-article-header-title">
+      第7章 型や型クラスを自分で作ろう 前編
+    </h1>
+    <div class="main-article-header-date">
+      2014-01-19
+    </div>
+  </div><h1>すごいHaskell楽しく学ぼう輪読会とは</h1>
+
+<h2>経緯</h2>
+
+<p>2012年にSICP読書会に参加していてとてもためになったという話をしたのがきっかけで、社内でコンピュータサイエンスの勉強会をやろうということになりました。
+そこで、2013年夏に社内でどの本を教科書にするかアンケートをおこないました。</p>
+
+<h1>教科書の候補に上がった本</h1>
+
+<h2>計算機プログラムの構造と解釈(SICP)</h2>
+
+<ul>
+<li>言語：Scheme</li>
+<li>Web上での問題の解答の多さ(すくなくとも日本語での)は、他を圧倒してる。</li>
+</ul>
+
+<p><img src="http://seaoak.cocolog-nifty.com/photos/uncategorized/2010/12/26/sicp_original.jpg" width="320px"></p>
+
+<h2>関数プログラミング入門(IFPH)</h2>
+
+<ul>
+<li>言語：Haskell</li>
+<li>SICPよりちょっと難しい。一番最初にやる本ではない感じ(ってえらい人が言ってました)。</li>
+</ul>
+
+<p><img src="http://ec2.images-amazon.com/images/I/41DBju8o5%2BL._BO2,204,203,200_PIsitb-sticker-arrow-click,TopRight,35,-76_AA300_SH20_OU09_.jpg" width="320px"></p>
+
+<h2>プログラミングの基礎</h2>
+
+<ul>
+<li>言語：Ocaml</li>
+<li>著者による解答例あり。<a href="http://d.hatena.ne.jp/nowokay/20090321#1237617054">いまSICPを読むのは時間の無駄 - きしだのはてな</a></li>
+</ul>
+
+<p><img src="http://ec2.images-amazon.com/images/I/51GBOf09hjL._SL500_AA300_.jpg" width="320px"></p>
+
+<h2>プログラミング言語の基礎概念</h2>
+
+<ul>
+<li>言語：Ocaml</li>
+<li><a href="http://d.hatena.ne.jp/nowokay/20111221#1324440641">「プログラミング言語の基礎概念」という本が非常にお気に入り - きしだのはてな</a></li>
+</ul>
+
+<p><img src="http://ecx.images-amazon.com/images/I/51PozlQUByL._SL500_AA300_.jpg" width="320px"></p>
+
+<h2>すごいHaskell楽しく学ぼう！</h2>
+
+<ul>
+<li>言語：Haskell</li>
+<li>Haskellを学ぶのならたぶんこの本が一番いい(ってえらい人が言ってました)。</li>
+</ul>
+
+<p><img src="http://ecx.images-amazon.com/images/I/513ipzNg22L.jpg" width="320px"></p>
+
+<h2>エンタープライズアプリケーションアーキテクチャパターン(PoEAA)</h2>
+
+<ul>
+<li>言語：Java, C#</li>
+<li>今回挙げた中では一番実用的な雰囲気がある。</li>
+</ul>
+
+<p><img src="http://ecx.images-amazon.com/images/I/51TVM1CFHKL._BO2,204,203,200_PIsitb-sticker-arrow-click,-76_AA300_SH20_OU09_.jpg" width="320px"></p>
+
+<h2>コンピュータ・プログラミングの概念・技法・モデル(CTMCP)</h2>
+
+<ul>
+<li>言語：Oz(Mozart)</li>
+<li>プログラミングパラダイムの種類をたくさん紹介しているのが良い。</li>
+</ul>
+
+<p><img src="http://ec2.images-amazon.com/images/I/51iXhiKTamL._SL500_AA300_.jpg" width="320px"></p>
+
+<h2>型システム入門(TaPL)</h2>
+
+<ul>
+<li>言語：Ocaml</li>
+<li>前提として離散数学、論理学、高階関数型プログラミング言語の知識、コンパイラの基礎的な概念が必要だけど面白そう。</li>
+</ul>
+
+<p><img src="http://ec2.images-amazon.com/images/I/41gusdgRAkL._BO2,204,203,200_PIsitb-sticker-arrow-click,TopRight,35,-76_AA300_SH20_OU09_.jpg" width="320px"></p>
+
+<h2>なるほどUNIXプロセス(Rubyで学ぶプロセスの基礎)</h2>
+
+<ul>
+<li>言語：Ruby</li>
+<li>そらくんがオススメって言ってました。</li>
+</ul>
+
+<p><img src="http://tatsu-zine.com/images/books/87/cover_s.jpg" width="320px"></p>
+
+<h2>アンケート結果</h2>
+
+<ul>
+<li>RubyとかRailsとかより、業務から離れたもの(パラダイムのちがうもの)を学びたいという意見があった。</li>
+<li>SICPは読んだことがある人が多かった。</li>
+<li>関数型言語をやりたいという意見が多かった。</li>
+</ul>
+
+<h2>すごいHaskellたのしく学ぼう輪読会！</h2>
+
+<ul>
+<li>毎週月曜に担当者持ち回りで、担当者は読んだところを要約して聴きに来た人に説明する。</li>
+<li>聴きに来た人は分からないこととか思ったこととかあったらその場ですぐ発言する(そのためのマイク2本)。</li>
+<li>堅い感じではなくなるべくワイワイする。</li>
+<li>完走したら関東の関数型言語erを集めてLT大会をしたい。</li>
+</ul>
+
+<h1>第7章 型や型クラスを自分で作ろう 前編</h1>
+
+<p>2週に渡って第7章を読みます。</p>
+
+<h3>今回学ぶこと</h3>
+
+<ul>
+<li>Bool, Int, Char, Maybeみたいなデータ型を自分で作る方法を学ぶ</li>
+<li>データ型をモジュールとしてエクスポートしてみる</li>
+<li>レコード構文を使ってデータ型を定義する</li>
+<li>型引数について学ぶ</li>
+<li>インスタンスを自動導出してみる</li>
+</ul>
+
+<h2>データ型？</h2>
+
+<p>ghciを起動して <code>:i Bool</code> とかやってみてください。</p>
+
+<pre><code class="haskell">Prelude&gt; :i Bool
+data Bool = False | True        -- Defined in `GHC.Types&#39;
+instance Bounded Bool -- Defined in `GHC.Enum&#39;
+instance Enum Bool -- Defined in `GHC.Enum&#39;
+instance Eq Bool -- Defined in `GHC.Classes&#39;
+instance Ord Bool -- Defined in `GHC.Classes&#39;
+instance Read Bool -- Defined in `GHC.Read&#39;
+instance Show Bool -- Defined in `GHC.Show&#39;
+Prelude&gt; :i Maybe
+data Maybe a = Nothing | Just a         -- Defined in `Data.Maybe&#39;
+instance Eq a =&gt; Eq (Maybe a) -- Defined in `Data.Maybe&#39;
+instance Monad Maybe -- Defined in `Data.Maybe&#39;
+instance Functor Maybe -- Defined in `Data.Maybe&#39;
+instance Ord a =&gt; Ord (Maybe a) -- Defined in `Data.Maybe&#39;
+instance Read a =&gt; Read (Maybe a) -- Defined in `GHC.Read&#39;
+instance Show a =&gt; Show (Maybe a) -- Defined in `GHC.Show&#39;
+</code></pre>
+
+<ul>
+<li>Bool は False か True をとる</li>
+<li>Maybe a は Nothing か Just a をとる</li>
+</ul>
+
+<p>これがデータ型です。</p>
+
+<p>今日話すところのデータ型 = 代数的データ型(A|B) = 集合論でいうところの直和型(A+B) = 直積型の総和</p>
+
+<ul>
+<li><a href="http://ja.wikipedia.org/wiki/%E4%BB%A3%E6%95%B0%E7%9A%84%E3%83%87%E3%83%BC%E3%82%BF%E5%9E%8B">代数的データ型</a></li>
+</ul>
+
+<blockquote>
+<p>1個以上のコンストラクタがあり、各コンストラクタには0個以上の引数がある。</p>
+</blockquote>
+
+<ul>
+<li><a href="http://ja.wikipedia.org/wiki/%E7%9B%B4%E5%92%8C#.E9.9B.86.E5.90.88.E3.81.AE.E7.9B.B4.E5.92.8C">直和</a></li>
+</ul>
+
+<blockquote>
+<p>共通部分が空集合であるような二つの集合の和集合を表す。</p>
+</blockquote>
+
+<ul>
+<li><a href="http://jutememo.blogspot.jp/2008/07/haskell-instance.html">Haskell の代数的データ型と型クラス、instance 宣言の関係</a></li>
+</ul>
+
+<p><img src="http://static.flickr.com/3004/2652003884_a25c578931.jpg" alt=""></p>
+
+<h2>新しいデータ型を定義する</h2>
+
+<p>data宣言は下のような構文になっています。</p>
+
+<pre><code>data 型構築子 型引数 …
+  = データ構築子A 型式A …
+  | データ構築子B 型式B …
+  ...
+  | データ構築子N 型式N …
+</code></pre>
+
+<ul>
+<li>型構築子 (type constructor) (型コンストラクタ)
+
+<ul>
+<li>データ型の名前。必要であれば引数に型引数を指定できる。</li>
+</ul></li>
+<li>データ構築子 (data constructor) (値コンストラクタ)
+
+<ul>
+<li>実際の値の生成やパターンマッチのときに使用する。</li>
+</ul></li>
+</ul>
+
+<p>ちなみに <code>[]</code> や <code>-></code> も型構築子です。</p>
+
+<h2>データ型を操作する</h2>
+
+<p>はじめに、bookIdとtitleを持つBookinfoというデータ型を作ってみましょう。</p>
+
+<pre><code class="haskell">data Bookinfo = Book Int String
+  deriving (Show)
+</code></pre>
+
+<p>このように、値コンストラクタを書くときは、後ろに型を付け足すことができ、それらは値コンストラクタに与える引数の型になります。
+型があって、その型を構成する部品を書くようなイメージです。</p>
+
+<pre><code class="haskell">&gt; :t Book
+Book :: Int -> String -> Bookinfo
+</code></pre>
+
+<p>実のところ、値コンストラクタは、そのデータ型の値を返す関数なのです。</p>
+
+<p>次に、BookからbookIdを取得する関数、titleを取得する関数を書いてみましょう。</p>
+
+<pre><code class="haskell">bookId :: Bookinfo -> Int
+bookId (Book bookId _) = bookId
+
+title :: Bookinfo -> String
+title (Book _ title) = title
+</code></pre>
+
+<p>なんとなく理解できましたか？
+では、次に長方形と円という2種類の図形を扱うことにしましょう。</p>
+
+<pre><code class="haskell">data Shape = Circle Float Float Float
+           | Rectangle Float Float Float Float
+</code></pre>
+
+<p>Circle値コンストラクタには、浮動小数を受け取るフィールドが3つあります。
+ここでは、最初の2つのフィールドは円の中心の座標で、3つ目のフィールドは円の半径です。</p>
+
+<pre><code class="haskell">&gt; :t Circle
+Circle :: Float -> Float -> Float -> Shape
+&gt; :t Rectangle
+Rectangle :: Float -> Float -> Float -> Float -> Shape
+</code></pre>
+
+<p>では、Shapeを引数に取って、その面積を返すarea関数を作ってみましょう。</p>
+
+<pre><code class="haskell">area :: Shape -> Float
+???
+</code></pre>
+
+<h3>hint</h3>
+
+<ul>
+<li>値コンストラクタはパターンマッチに使えます。</li>
+<li>円周率は <code>pi</code> が使えます。</li>
+<li>絶対値は <code>abs</code> 関数が使えます。</li>
+</ul>
+
+<pre><code class="haskell">toString :: Bool -> String
+toString True = &quot;True&quot;
+toString False = &quot;False&quot;
+</code></pre>
+
+<h2>実際の例</h2>
+
+<h3><a href="https://github.com/scotty-web/scotty">scotty-web/scotty</a></h3>
+
+<p>Scottyは、RubyのSinatraライクなWAFです。</p>
+
+<pre><code>$ cabal install scotty
+</code></pre>
+
+<pre><code class="haskell">{-# LANGUAGE OverloadedStrings #-}
+import Web.Scotty
+
+main = scotty 3000 $ do
+  get &quot;/&quot; $ text &quot;hello&quot;
+</code></pre>
+
+<p>scottyの例外の定義にデータ型を使っている。</p>
+
+<pre><code class="haskell">data Except = Forbidden | NotFound Int | StringEx String
+  deriving (Show, Eq)
+
+…
+
+main :: IO ()
+main = scottyT 3000 id id $ do
+    middleware logStdoutDev
+    defaultHandler handleEx -- 例外のハンドラをセットできる
+
+    get &quot;/&quot; $ do
+      ...
+</code></pre>
+
+<h2>データ型をモジュールとしてエクスポートしてみる</h2>
+
+<pre><code class="haskell">-- Shapes.hs
+module
+( Shapes
+, area
+)
+
+data Shape = Circle Float Float Float
+           | Rectangle Float Float Float Float
+  deriving (Show)
+
+area :: Shape -> Float
+area (Circle _ _ r) = pi * r ^ 2
+area (Rectangle x1 y1 x2 y2) = (abs (x2 - x1)) * (abs (y2 - y1))
+</code></pre>
+
+<pre><code class="haskell">-- Main.hs
+import Shapes
+
+main = do
+  print $ Circle 1 1 1
+</code></pre>
+
+<p>これで実行すると、</p>
+
+<pre><code>$ runghc Main.hs 
+
+2.hs:4:11: Not in scope: data constructor `Circle&#39;
+</code></pre>
+
+<p>と怒られると思います。
+値コンストラクタは明示的に書かないといけないのかというと、</p>
+
+<pre><code class="haskell">module
+( Shapes
+, Circle
+, Rectangle
+, area
+)
+</code></pre>
+
+<p>とすると、</p>
+
+<pre><code>Shapes.hs:3:4: Not in scope: type constructor or class `Circle&#39;
+</code></pre>
+
+<p>というわけで、この書き方は型コンストラクタか型クラスしかエクスポートできないみたいです。
+値コンストラクタをエクスポートするには、</p>
+
+<pre><code class="haskell">module
+( Shapes(Circle, Rectangle)
+, area
+)
+
+-- or
+
+module
+( Shapes(..) -- 普通はこっちの書き方をするようです
+, area
+)
+</code></pre>
+
+<p>また、特定のモジュールの中から何をインポートするかを指定することもできます。</p>
+
+<pre><code class="haskell">import Shapes(Shape(..))
+import Shapes(area)
+</code></pre>
+
+<h2>レコード構文を使ってデータ型を定義する</h2>
+
+<p>名前、年齢、身長、体重、電話番号を持つユーザーを表すデータ型とそれぞれのデータにアクセスするための関数を作ってみましょう。</p>
+
+<pre><code class="haskell">data User = User String Int Float Float String
+  deriving (Show)
+
+name :: User -> String
+name (User name _ _ _ _ ) = name
+
+age :: User -> Int
+age (User _ age _ _ _) = age
+
+height :: User -> Float
+height (User _ _ height _ _) = height
+
+weight :: User -> Float
+weight (User _ _ _ weight _) = weight
+
+phoneNumber :: User -> String
+phoneNumber (User _ _ _ _ number) = number
+</code></pre>
+
+<pre><code>&gt; User &quot;John&quot; 32 180 80 &quot;123-4567&quot;
+User &quot;John&quot; 32 180.0 80.0 &quot;123-4567&quot;
+</code></pre>
+
+<p>フィールドが多いと大変だし分かりづらいですね。
+そこでレコード構文です。</p>
+
+<pre><code>data 型構築子 型引数 ...
+  = データ構築子A {フィールド名A :: 型A, … }
+  | ...
+  | データ構築子Z {フィールド名Z :: 型Z, ... }
+</code></pre>
+
+<p>この構文を使うと、先ほどの定義は</p>
+
+<pre><code class="haskell">data User = User { name :: String
+                 , age :: Int
+                 , height :: Float
+                 , weight :: Float
+                 , phoneNumber :: String } deriving (Show)
+</code></pre>
+
+<p>こうするとフィールドを取得する関数も自動で作られます。
+また、レコード構文を使うと出力が変わります。</p>
+
+<pre><code>&gt; User &quot;John&quot; 32 180 80 &quot;123-4567&quot;
+User {name = &quot;John&quot;, age = 32, height = 180.0, weight = 80.0, phoneNumber = &quot;123-4567&quot;}
+</code></pre>
+
+<p>また、値コンストラクタにフィールド名を渡すことで順番を変えることができます(すべてのフィールドを埋める必要はあります)。</p>
+
+<pre><code class="haskell">&gt; User {age = 32, height = 180.0, weight = 80.0, phoneNumber = &quot;123-4567&quot;, name = &quot;John&quot;}
+User {name = &quot;John&quot;, age = 32, height = 180.0, weight = 80.0, phoneNumber = &quot;123-4567&quot;}
+
+&gt; User {age = 32, height = 180.0, weight = 80.0, phoneNumber = &quot;123-4567&quot;}
+
+&lt;interactive&gt;:14:1:
+    Warning: Fields of `User&#39; not initialised: name
+    In the expression:
+      User
+        {age = 32, height = 180.0, weight = 80.0, phoneNumber = &quot;123-4567&quot;}
+    In an equation for `it&#39;:
+        it
+          = User
+              {age = 32, height = 180.0, weight = 80.0, phoneNumber = &quot;123-4567&quot;}
+
+&lt;interactive&gt;:14:1:
+    Warning: Fields of `User&#39; not initialised: name
+    In the expression:
+      User
+        {age = 32, height = 180.0, weight = 80.0, phoneNumber = &quot;123-4567&quot;}
+    In an equation for `it&#39;:
+        it
+          = User
+              {age = 32, height = 180.0, weight = 80.0, phoneNumber = &quot;123-4567&quot;}
+User {name = &quot;*** Exception: &lt;interactive&gt;:14:1-72: Missing field in record construction Main.name
+</code></pre>
+
+<h2>型引数</h2>
+
+<p>型コンストラクタは型引数を取ることができます。</p>
+
+<pre><code>&gt; :i Maybe
+data Maybe a = Nothing | Just a
+</code></pre>
+
+<p>値コンストラクタが引数を取って新しい値を生み出すものでしたが、同じように型コンストラクタは型引数を取って新しい型を作るものです。</p>
+
+<p>単なるMaybeという型の値は存在できません。</p>
+
+<p>MaybeにIntを渡すとMaybe Int型が得られますし、MaybeにStringを渡せばMaybe String型が得られます。</p>
+
+<p>こうすることで、</p>
+
+<pre><code class="haskell">data IntMaybe = INothing | IJust Int
+data StringMaybe = SNothing | SJust String
+data ShapeMaybe = ShNothing | ShJust Shape
+</code></pre>
+
+<p>のように、中身の型ごとに別々の型にする必要がなくなります。</p>
+
+<p>実は、ここまですでにリスト型で型引数を使っていたりします。</p>
+
+<pre><code class="haskell">&gt; :i []
+data [] a = [] | a : [a]
+</code></pre>
+
+<p>また、型引数を持つ型は多相型と呼ばれます。</p>
+
+<ul>
+<li><a href="http://itpro.nikkeibp.co.jp/article/COLUMN/20060905/247156/">第2回　多相性（ポリモーフィズム）への理解を深める</a></li>
+</ul>
+
+<blockquote>
+<p>多相性は「ある関数や型を、複数の型に対して使用できる」という性質を示す言葉です。こうした性質を持つ関数であれば、数値計算や文字列の連結、I/O（入出力）処理など一見全く違うように見えるような処理を、あたかも同じもののように扱うことができます。</p>
+</blockquote>
+
+<h2>リストに複数の型を含める</h2>
+
+<p>Int、Float、Charを含んだリストを作るとします。</p>
+
+<pre><code class="haskell">&gt; [1, 1.0, &#39;a&#39;]
+
+&lt;interactive&gt;:3:2:
+    No instance for (Num Char)
+      arising from the literal `1&#39;
+    Possible fix: add an instance declaration for (Num Char)
+    In the expression: 1
+    In the expression: [1, 1.0, &#39;a&#39;]
+    In an equation for `it&#39;: it = [1, 1.0, &#39;a&#39;]
+
+&lt;interactive&gt;:3:5:
+    No instance for (Fractional Char)
+      arising from the literal `1.0&#39;
+    Possible fix: add an instance declaration for (Fractional Char)
+    In the expression: 1.0
+    In the expression: [1, 1.0, &#39;a&#39;]
+    In an equation for `it&#39;: it = [1, 1.0, &#39;a&#39;]
+</code></pre>
+
+<p>そのままだと[] Numで型推論されてCharを含められなくなるので、新しいデータ型を定義します。</p>
+
+<pre><code class="haskell">data MyType = I Int | F Float | C Char
+  deriving (Show)
+
+&gt; [I 1, F 1.0, C &#39;a&#39;]
+[I 1,F 1.0,C &#39;a&#39;]
+
+&gt; :t [I 1, F 1.0, C &#39;a&#39;]
+[I 1, F 1.0, C &#39;a&#39;] :: [MyType]
+</code></pre>
+
+<p>こうすることで、[] MyType型を作ることができます。</p>
+
+<p>では、[MyType]のリストからC要素を取り出すfilterC関数を作ってみましょう。</p>
+
+<pre><code class="haskell">-- 再帰を使う
+filterC :: [MyType] -> [MyType]
+filterC _ [] = []
+filterC (x:xs)
+  | ???
+  | ???
+
+-- リスト内包表記を使う
+[x | x &lt;- [I 1, F 1.0, C &#39;a&#39;], ???]
+
+-- filter関数を使う
+filterC :: [MyType] -> [MyType]
+filterC = filter isC
+  where ???
+</code></pre>
+
+<h2>インスタンスを自動導出してみる</h2>
+
+<p>もし T が次のように定義された代数的データ型であるなら</p>
+
+<pre><code>data cx =&gt; T u1 ... uk  = K1 t11 ... t1k1 | ...| Kn tn1 ... tnkn
+  deriving (C1, ..., Cm)
+</code></pre>
+
+<p>(ここで m&gt;=0 および括弧は m=1 の場合省略される)、 導出インスタンス宣言は、クラス C について、以下の条件が なりたてば、可能となる。</p>
+
+<ul>
+<li>C が Eq、Ord、Enum、Bounded、Show あるいは Read のうちの どれか。</li>
+<li>cx&#39; =&gt; C tij が構成要素の型 tij のそれぞれについて保存されているような 文脈 cx&#39; がある。</li>
+<li>C が Bounded である場合。このとき、この型は列挙型 (すべての構成子が無引数)であるか、または構成子が一つしかないかの どちらかでなければならない。</li>
+<li>C が Enum である場合。このとき、この型は列挙型 でなければならない。</li>
+<li>T u1 ... ukを C のインスタンスとしたプログラム内の別の個所で明示的な インスタンス宣言があってはならない。</li>
+</ul>
+
+<p>整理すると、derivingキーワードを使うことで、特定の型クラスのインスタンス宣言を自動生成する(振る舞いがサポートされる)ことができます、ということです。
+振る舞いがサポートされるということは、つまり関数が生えるということです。</p>
+
+<h2>EqおよびOrdの導出インスタンス</h2>
+
+<p>EqおよびOrdでは、(==)、(/=)、 compare、(&lt;)、(&lt;=)、(&gt;)、 (&gt;=)、max および min が導入されます。</p>
+
+<p>(==) や (/=) などで比較するときは、値コンストラクタの書くフィールドがすべて一致しているかを (==) で比較します。
+なので、すべてのフィールドの型がEq型クラスのインスタンスでないと自動導出することはできません。</p>
+
+<pre><code class="haskell">-- 各フィールドが一致するか (==) で比較します
+-- そのため、すべてのフィールドの型がEq型クラスのインスタンスでないと自動導出することはできません
+data User = User { name :: String
+                 , age :: Int
+                 , height :: Float
+                 , weight :: Float
+                 , phoneNumber :: String }
+</code></pre>
+
+<h2>Enumの導出インスタンス</h2>
+
+<p>Enumクラスに対する導出インスタンス宣言は列挙型(データ型が無引数構成子のみを含む型)(つまり引数なしの値コンストラクタ)にのみ可能です。
+succ と pred 演算子で、左から右へ、次の値、前の値を与えられるようになります。</p>
+
+<h2>Boundedの導出インスタンス</h2>
+
+<p>Boundedでは minBound および maxBound というクラスメソッドが導入されます。</p>
+
+<h2>ReadおよびShowの導出インスタンス</h2>
+
+<p>ReadおよびShowでは showsPrec、readsPrec、showList、readListが導入されます。
+これらは値から文字列への相互変換のために用いられます。</p>
+
+<h2>何曜日でもいいよ</h2>
+
+<p>使える自動導出を全部使って、曜日のデータ型を作ってみましょう。</p>
+
+<pre><code class="haskell">data Day = Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday deriving (Eq, Ord, Show, Read, Bounded, Enum)
+</code></pre>
+
+<p>導入されたメソッドを呼んでみましょう。</p>
+
+<pre><code class="haskell">&gt; Wedneday
+&gt; show Wednesday
+&gt; read &quot;Wednesday&quot; :: Day
+&gt; Saturday == Sunday
+&gt; Monday `compare` Wednesday
+&gt; minBound :: Day
+&gt; succ Monday
+&gt; pred Saturday
+&gt; [minBound .. maxBound] :: [Day]
+</code></pre>
+
+<h2>次回</h2>
+
+<p>次回は 第7章 型や型クラスを自分で作ろう 後編 です(来週はお休みです)。</p>
+
+<p>| |日付|担当範囲|担当者|
+|:----:|:----:|:----:|:----:|
+|第一回|8/24|第一章 はじめの一歩|rejasupotaro|
+|第二回|9/2|第二章 型を信じろ！|mito|
+|第三回|9/9|第三章 関数の構文|mrkn|
+|第四回|9/30|第四章 Hello 再帰！|secon|
+|第五回|10/21|第五章 高階関数・前編|tokorom|
+|第六回|10/28|第五章 高階関数・後編|tokorom|
+|第七回|11/11|第六章 モジュール|yoshiori|
+|第八回|1/20|第七章 型やクラスを自分で作ろう 前編|rejasupotaro|
+|第九回|2/3|第七章 型やクラスを自分で作ろう 後編|rejasupotaro|
+|第十回|2/10|第八章 入出力|gfx|
+|第十一回|2/17|第九章 もっと入力、もっと出力||
+|第十二回|2/24|第十章 関数型問題解決法||
+|第十三回|3/3|第十一章 ファクターからアプリカティブファンクターへ||
+|第十四回|3/10|第十二章 モノイド||
+|第十五回|3/17|第十三章 モナドがいっぱい||
+|第十六回|3/24|第十四章 もうちょっとだけモナド 前編||
+|第十七回|3/24|第十四章 もうちょっとだけモナド 後編||
+|第十八回|3/31|第十五章 Zipper||
+|第十九回|4/14|LT大会||</p>
+
+<ul>
+<li>発表者は、聴く人が多少予習をしている(パラパラ見た程度)ことを前提にして資料を作る。</li>
+<li>書いてある内容でも微妙な例とかは飛ばしてもOK。</li>
+<li>長いところは適宜分割してOK。</li>
+</ul>
+
+</article>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-copyright">
+          Copyright &copy; 2013 by <a target="_blank" href="http://twitter.com/rejasupotaro">@rejasupotaro</a>
+        </p>
+        <p class="footer-powers">
+          Powered by <a href="https://github.com/r7kamura/r7kamura.github.io">Github</a> & <a href="https://github.com/r7kamura/sitespec">Sitespec</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
