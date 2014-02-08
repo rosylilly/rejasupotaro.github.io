@@ -1,0 +1,20 @@
+language: ruby
+env:
+  global:
+    - GIT_COMMITTER_NAME: "rejasupotaro"
+    - GIT_COMMITTER_EMAIL: "takiguchi0817@gmail.com"
+    - GIT_AUTHOR_NAME: "rejasupotaro"
+    - GIT_AUTHOR_EMAIL: "takiguchi0817@gmail.com"
+    - secure: "EuLzRXauYCHrsk0ztQaaXlFmjxYHOVYWwMobzKiXmLKMRzozQ8N2lrGdZTuXo/+hiEyvszTfaUQN/XFwtwIUrcROrKUJtya08CV3rIbYLMYcFg/gP8mE4sOdsGdBy9p60sZJ+6Q8cpqPz0ETufT7Xskp1blxQmYeVL0j4uUig4M="
+script:
+    - bundle exec rspec
+after_success:
+    - cd build
+    - echo "task :default" > Rakefile
+    - git init
+    - git add --all
+    - git commit -m "Update from Travis CI"
+    - 'git push --quiet https://$GITHUB_TOKEN@github.com/rejasupotaro/rejasupotaro.github.io.git master -f 2> /dev/null'
+branches:
+  only:
+    - source
