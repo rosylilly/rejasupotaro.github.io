@@ -51,7 +51,7 @@ def push_to_gh_pages(repository, branch)
     sh 'git init'
     sh 'git add --all .'
     sh "git commit -m 'Update with #{sha1}'"
-    sh "git push #{repository} #{branch}"
+    sh "git push #{repository} #{branch} -f"
   end
 end
 
