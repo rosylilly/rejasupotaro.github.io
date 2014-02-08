@@ -5,7 +5,7 @@ env:
     - GIT_COMMITTER_EMAIL: "takiguchi0817@gmail.com"
     - GIT_AUTHOR_NAME: "rejasupotaro"
     - GIT_AUTHOR_EMAIL: "takiguchi0817@gmail.com"
-    - secure: "EuLzRXauYCHrsk0ztQaaXlFmjxYHOVYWwMobzKiXmLKMRzozQ8N2lrGdZTuXo/+hiEyvszTfaUQN/XFwtwIUrcROrKUJtya08CV3rIbYLMYcFg/gP8mE4sOdsGdBy9p60sZJ+6Q8cpqPz0ETufT7Xskp1blxQmYeVL0j4uUig4M="
+    - secure: "TLm4LvfiBOqujs1Ihw7PdiPs5vZvz7drEMY8IT115xztaI51iPyIpFnQUYXozrG7Psy7oQd/mBtF2OAj70mmFM24Vh1eQj8eTNJjWLuqiO7aheXVA1qOHJrvlPc/ZfN5SlY2nia14vp0d5oMMkGCjmK8ksaX/mwUcc5q3bL9Kkg="
 script:
     - bundle exec rspec
 after_success:

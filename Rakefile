@@ -48,9 +48,10 @@ def push_to_gh_pages(repository, branch)
   sha1, _ = `git log -n 1 --oneline`.strip.split(' ')
 
   Dir.chdir DEST_DIR do
-    sh 'git add -A'
+    sh 'git init'
+    sh 'git add --all .'
     sh "git commit -m 'Update with #{sha1}'"
-    system "git push --quiet #{repository} #{branch} 2> /dev/null"
+    sh "git push #{repository} #{branch}"
   end
 end
 
