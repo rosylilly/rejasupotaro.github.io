@@ -13,7 +13,7 @@ class App < Padrino::Application
   use Rack::Static, urls: ["/images"]
 
   set :author, "rejasupotaro"
-  set :blog_description, "continue to deliver value to customers or die;"
+  set :blog_description, "deliver value to customers continuously or die;"
   set :blog_title, "Rejasupoem"
   set :scss, views: "#{root}/stylesheets", load_paths: ["#{root}/stylesheets"]
   set :show_exceptions, false
