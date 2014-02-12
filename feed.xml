@@ -1,20 +1,207 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>Rejasupoem</title>
-  <subtitle>continue to deliver value to customers or die;</subtitle>
+  <subtitle>deliver value to customers continuously or die;</subtitle>
   <id>http://rejasupotaro.github.io/</id>
   <link href="http://rejasupotaro.github.io/"/>
   <link href="http://rejasupotaro.github.io/feed.xml" rel="self"/>
-  <updated>2014-02-09T00:00:00+09:00</updated>
+  <updated>2014-02-11T00:00:00+09:00</updated>
   <author>
     <name>rejasupotaro</name>
   </author>
+  <entry>
+    <title>How to build a career through github activities</title>
+    <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/11/36.html"/>
+    <id>http://rejasupotaro.github.io/2014/02/11/36.html</id>
+    <published>2014-02-11T00:00:00+09:00</published>
+    <updated>2014-02-12T14:15:38+09:00</updated>
+    <author>
+      <name>rejasupotaro</name>
+    </author>
+    <content type="html">&lt;script async class="speakerdeck-embed" data-id="d07deda0755701312eb91a125ab0a9e4" data-ratio="1.33333333333333" src="//speakerdeck.com/assets/embed.js"&gt;&lt;/script&gt;
+
+&lt;p&gt;&lt;a href="https://github.com/potatotips/potatotips/wiki/potatotips-4"&gt;potatotips-4&lt;/a&gt; で自分が作ったライブラリをどうやって使ってもらうかという話をしました。
+元ネタはninjinkunさんの&lt;a href="http://www.slideshare.net/ninjinkun/i-os-30692824"&gt;GitHub活動を通して個人のキャリアを積みつつ仕事の成果を出す方法&lt;/a&gt;です。
+持ち時間が5分だったので、時間の都合上端折った箇所を補足します。&lt;/p&gt;
+
+&lt;h1&gt;1. 試しやすくする&lt;/h1&gt;
+
+&lt;h3&gt;サンプルアプリを付ける　&lt;/h3&gt;
+
+&lt;p&gt;サンプルがあるとどういう動きをするのか実際にさわって分かるというのと、それ自体がドキュメントとしての役割を持つので、ライブラリ導入のハードルを下げると思います。
+それと、ライブラリを開発しているときも一旦どこかにデプロイして〜とかしなくてもよくなるので、開発スピードが上がります。&lt;/p&gt;
+
+&lt;h1&gt;2. 組み込みやすくする&lt;/h1&gt;
+
+&lt;p&gt;いざ自分のプロジェクトにライブラリを入れようと思ったときに、インストールの仕方が書いてないとアッアッとなります。
+そこで開発者が離れていってしまうのはもったいないので、インストール手順は書いた方がいいです。&lt;/p&gt;
+
+&lt;h3&gt;githubにrepositoryとして使う&lt;/h3&gt;
+
+&lt;p&gt;maven-metadata.xmlとファイルの実体さえあえば、どこでもmavenリポジトリにすることができます。
+gradleの例ですが、以下のような記述を &lt;code&gt;projectDir/build.gradle&lt;/code&gt; に追加して、&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class="groovy"&gt;apply plugin: &amp;#39;android-library&amp;#39;
+apply plugin: &amp;#39;maven&amp;#39;
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository url: &amp;quot;file://${projectDir}/repository&amp;quot;
+            pom.groupId = &amp;#39;rejasupotaro&amp;#39;
+            pom.artifactId = &amp;#39;my-library&amp;#39;
+            pom.version = &amp;#39;0.0.1&amp;#39;
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;コマンドを実行すると、&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class="sh"&gt;$ gradle uploadArchives
+$ tree repository
+repository
+└── rejasupotaro
+    └── my-library
+        ├── 0.0.1
+        │   ├── my-library-0.0.1.aar
+        │   ├── my-library-0.0.1.aar.md5
+        │   ├── my-library-0.0.1.aar.sha1
+        │   ├── my-library-0.0.1.pom
+        │   ├── my-library-0.0.1.pom.md5
+        │   └── my-library-0.0.1.pom.sha1
+        ├── maven-metadata.xml
+        ├── maven-metadata.xml.md5
+        └── maven-metadata.xml.sha1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;このようになります。
+これをコミットしてプッシュします。&lt;/p&gt;
+
+&lt;h3&gt;github上のrepositoryからdependencyを解決する&lt;/h3&gt;
+
+&lt;p&gt;githubのファイルには &lt;code&gt;raw.github.com&lt;/code&gt; でアクセスできるので、repositoriesにgithubのurlを指定して、dependenciesに追加すれば、ライブラリを使うことができるようになります。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class="groovy"&gt;repositories {
+    ...
+    maven { url &amp;#39;https://raw.github.com/rejasupotaro/MyLibrary/master/library/repository&amp;#39; }
+}
+
+dependencies {
+    ...
+    compile &amp;#39;rejasupotaro:my-library:0.0.1&amp;#39;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;ローカルでjarにする&lt;/h2&gt;
+
+&lt;p&gt;リソースもいらないし手元で、jarに出来ればよいという場合には、以下のようにすればいいと思います。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apply plugin: &amp;#39;java&amp;#39;
+
+group = &amp;#39;rejasupotaro&amp;#39;
+archivesBaseName = &amp;#39;my-library&amp;#39;
+version = &amp;#39;0.0.1&amp;#39;
+
+sourceSets {
+    main {
+        java {
+            srcDir &amp;#39;src/main/java&amp;#39;
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: &amp;#39;libs&amp;#39;, include: &amp;#39;*.jar&amp;#39;)
+}
+
+task sourcesJar(type: Jar) {
+    classifier = &amp;#39;sources&amp;#39;
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;$ gradle jar&lt;/code&gt; を実行すると &lt;code&gt;src/main/java&lt;/code&gt; 以下のclassファイルとManifestのarchive(jar)が作成されます。&lt;/p&gt;
+
+&lt;p&gt;pluginが他のプラグインとぶつかるときは、環境変数で切り替えたりしています。
+たとえばjarを作るときはリリース時なので &lt;code&gt;$ gradle jar -Penv=release&lt;/code&gt; みたいな。&lt;/p&gt;
+
+&lt;h1&gt;3. 品質を高める&lt;/h1&gt;
+
+&lt;p&gt;テストをどう書くか、という話はここではしませんが、少なくともテストのないライブラリは積極的に使おうという気にはならないですよね。
+テストに加えて、CIが通ったバッチがREADMEについてると、なお安心感があります。&lt;/p&gt;
+
+&lt;p&gt;どのCIサービスを使うかという話ですが、好みがあると思いますが、僕は一応Wercker推しです。
+以下、非常に偏った比較です。&lt;/p&gt;
+
+&lt;h3&gt;Wercker&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;何も書かなくてもデフォルトのビルドファイルを適用してくれる&lt;/li&gt;
+&lt;li&gt;あらかじめビルド環境(Box)が用意されている&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/wercker/box-android"&gt;wercker / box-android&lt;/a&gt;が公開されてる&lt;/li&gt;
+&lt;li&gt;submoduleを自動で取ってきてくれる&lt;/li&gt;
+&lt;li&gt;あと何秒みたいなのが表示されたり、グラフィカルなBuild Statsがあったり、UIが洗練されている&lt;/li&gt;
+&lt;li&gt;ビルドがTravisと比べて速い&lt;/li&gt;
+&lt;li&gt;ログはリアルタイムに更新されない&lt;/li&gt;
+&lt;li&gt;デプロイまで面倒を見てくれる&lt;/li&gt;
+&lt;li&gt;まだβ版なので今後どうなるかは分からない&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3&gt;Circle CI&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;ちょっと洗練されたTravis(イメージ)&lt;/li&gt;
+&lt;li&gt;結構ビジネスって使ってるって聞きます&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3&gt;Travis&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;個人の開発者とか、OSSで一番よく使われている&lt;/li&gt;
+&lt;li&gt;最初は設定が面倒だけど、一度設定すれば設定ファイルをコピペでいける&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3&gt;サーバーのセットアップ&lt;/h3&gt;
+
+&lt;p&gt;社内のAndroidのビルド環境のセットアップを丹精込めて手作業で行なってきたけど、最近物忘れが激しくて &lt;code&gt;android…update…filter…?no-ui…???&lt;/code&gt; みたいにコマンドがうろ覚え状態ということもあり、CIサーバーのセットアップを自動化できないかと思って流行りのchefとかfabricとかserverspecとかを使ってみたけど、&lt;a href="https://github.com/embarkmobile/android-sdk-installer"&gt;android-sdk-installer&lt;/a&gt;を使うというところに落ち着きました。&lt;/p&gt;
+
+&lt;p&gt;これのいいところは、Travisを使っている人は分かると思いますが、毎回 &lt;code&gt;wait_for_emulator&lt;/code&gt; をコピペしていたのが、ツールの中に入ってるのが良かったです。&lt;/p&gt;
+
+&lt;h1&gt;4. 表現を工夫する&lt;/h1&gt;
+
+&lt;p&gt;UIのライブラリはgifアニメがあるだけで印象がだいぶ変わります。
+あとライセンスがREADMEに書いてあるものも、僕的にポイント高いです。&lt;/p&gt;
+
+&lt;p&gt;&lt;img height="200" src="https://github-camo.global.ssl.fastly.net/d20ac6fb1cb14db4b69ab5e48ebd609aab1f6831/687474703a2f2f6f70656e61706869642e6769746875622e636f6d2f696d616765732f666c6970766965772d686f72697a6f6e74616c2d64656d6f2e676966"&gt;
+&lt;img height="200" src="http://gifzo.net/jTEl4YmZqD.gif"&gt;
+&lt;img height="200" src="http://gifzo.net/BWvNCrQFYfF.gif"&gt;
+&lt;img height="200" src="http://gifzo.net/68NrYQW2tB.gif"&gt;
+&lt;img height="200" src="http://gifzo.net/lSwyh4fg6P.gif"&gt;
+&lt;img height="200" src="http://gifzo.net/OKyqq1D9yD.gif"&gt;&lt;/p&gt;
+
+&lt;p&gt;みたいな。&lt;/p&gt;
+
+&lt;h1&gt;5. 広報&lt;/h1&gt;
+
+&lt;p&gt;READMEはインストール方法とか、ライブラリの使い方とかしか書けないけど、ブログならどういう問題があって、どういうアプローチで解決したかみたいな背景も書けるので、そういうのを知ると使ってみようかなっていう気になるし、それに拡散できるのでよいです。&lt;/p&gt;
+
+&lt;h1&gt;おわりに&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/activities.png" alt=""&gt;
+&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/aizen.png" alt=""&gt;&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>KinMozaView is updated!!</title>
     <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/09/35.html"/>
     <id>http://rejasupotaro.github.io/2014/02/09/35.html</id>
     <published>2014-02-09T00:00:00+09:00</published>
-    <updated>2014-02-09T02:35:29+09:00</updated>
+    <updated>2014-02-12T14:14:50+09:00</updated>
     <author>
       <name>rejasupotaro</name>
     </author>
@@ -161,7 +348,7 @@ loadDataWithBaseURL(&amp;quot;&amp;quot;, content, &amp;quot;text/html&amp;quot;
     <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/06/34.html"/>
     <id>http://rejasupotaro.github.io/2014/02/06/34.html</id>
     <published>2014-02-06T00:00:00+09:00</published>
-    <updated>2014-02-09T01:15:20+09:00</updated>
+    <updated>2014-02-12T14:14:50+09:00</updated>
     <author>
       <name>rejasupotaro</name>
     </author>
@@ -391,7 +578,7 @@ IDEのデフォルト機能でViewHolder以外のコードを生成できるの�
     <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/02/33.html"/>
     <id>http://rejasupotaro.github.io/2014/02/02/33.html</id>
     <published>2014-02-02T00:00:00+09:00</published>
-    <updated>2014-02-09T01:15:20+09:00</updated>
+    <updated>2014-02-12T14:14:50+09:00</updated>
     <author>
       <name>rejasupotaro</name>
     </author>
@@ -999,7 +1186,7 @@ Functorになるには &lt;code&gt;* -&gt; *&lt;/code&gt; という種類を持�
     <link rel="alternate" href="http://rejasupotaro.github.io/2014/01/30/32.html"/>
     <id>http://rejasupotaro.github.io/2014/01/30/32.html</id>
     <published>2014-01-30T00:00:00+09:00</published>
-    <updated>2014-02-09T01:15:20+09:00</updated>
+    <updated>2014-02-12T14:14:50+09:00</updated>
     <author>
       <name>rejasupotaro</name>
     </author>
@@ -1039,7 +1226,7 @@ Functorになるには &lt;code&gt;* -&gt; *&lt;/code&gt; という種類を持�
     <link rel="alternate" href="http://rejasupotaro.github.io/2014/01/30/31.html"/>
     <id>http://rejasupotaro.github.io/2014/01/30/31.html</id>
     <published>2014-01-30T00:00:00+09:00</published>
-    <updated>2014-02-09T01:15:20+09:00</updated>
+    <updated>2014-02-12T14:14:50+09:00</updated>
     <author>
       <name>rejasupotaro</name>
     </author>
@@ -1329,624 +1516,6 @@ public static final String getStringFromAttribute(Context context, AttributeSet 
 &lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201401/scalpel.png" width="200"&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;img src="https://github.com/JakeWharton/scalpel/raw/master/images/sample.gif" width="200"&gt;&lt;/p&gt;
-</content>
-  </entry>
-  <entry>
-    <title>第7章 型や型クラスを自分で作ろう 前編</title>
-    <link rel="alternate" href="http://rejasupotaro.github.io/2014/01/19/30.html"/>
-    <id>http://rejasupotaro.github.io/2014/01/19/30.html</id>
-    <published>2014-01-19T00:00:00+09:00</published>
-    <updated>2014-02-10T16:04:20+09:00</updated>
-    <author>
-      <name>rejasupotaro</name>
-    </author>
-    <content type="html">&lt;h1&gt;すごいHaskell楽しく学ぼう輪読会とは&lt;/h1&gt;
-
-&lt;h2&gt;経緯&lt;/h2&gt;
-
-&lt;p&gt;2012年にSICP読書会に参加していてとてもためになったという話をしたのがきっかけで、社内でコンピュータサイエンスの勉強会をやろうということになりました。
-そこで、2013年夏に社内でどの本を教科書にするかアンケートをおこないました。&lt;/p&gt;
-
-&lt;h1&gt;教科書の候補に上がった本&lt;/h1&gt;
-
-&lt;h2&gt;計算機プログラムの構造と解釈(SICP)&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;言語：Scheme&lt;/li&gt;
-&lt;li&gt;Web上での問題の解答の多さ(すくなくとも日本語での)は、他を圧倒してる。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src="http://seaoak.cocolog-nifty.com/photos/uncategorized/2010/12/26/sicp_original.jpg" width="320px"&gt;&lt;/p&gt;
-
-&lt;h2&gt;関数プログラミング入門(IFPH)&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;言語：Haskell&lt;/li&gt;
-&lt;li&gt;SICPよりちょっと難しい。一番最初にやる本ではない感じ(ってえらい人が言ってました)。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src="http://ec2.images-amazon.com/images/I/41DBju8o5%2BL._BO2,204,203,200_PIsitb-sticker-arrow-click,TopRight,35,-76_AA300_SH20_OU09_.jpg" width="320px"&gt;&lt;/p&gt;
-
-&lt;h2&gt;プログラミングの基礎&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;言語：Ocaml&lt;/li&gt;
-&lt;li&gt;著者による解答例あり。&lt;a href="http://d.hatena.ne.jp/nowokay/20090321#1237617054"&gt;いまSICPを読むのは時間の無駄 - きしだのはてな&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src="http://ec2.images-amazon.com/images/I/51GBOf09hjL._SL500_AA300_.jpg" width="320px"&gt;&lt;/p&gt;
-
-&lt;h2&gt;プログラミング言語の基礎概念&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;言語：Ocaml&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://d.hatena.ne.jp/nowokay/20111221#1324440641"&gt;「プログラミング言語の基礎概念」という本が非常にお気に入り - きしだのはてな&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src="http://ecx.images-amazon.com/images/I/51PozlQUByL._SL500_AA300_.jpg" width="320px"&gt;&lt;/p&gt;
-
-&lt;h2&gt;すごいHaskell楽しく学ぼう！&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;言語：Haskell&lt;/li&gt;
-&lt;li&gt;Haskellを学ぶのならたぶんこの本が一番いい(ってえらい人が言ってました)。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src="http://ecx.images-amazon.com/images/I/513ipzNg22L.jpg" width="320px"&gt;&lt;/p&gt;
-
-&lt;h2&gt;エンタープライズアプリケーションアーキテクチャパターン(PoEAA)&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;言語：Java, C#&lt;/li&gt;
-&lt;li&gt;今回挙げた中では一番実用的な雰囲気がある。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src="http://ecx.images-amazon.com/images/I/51TVM1CFHKL._BO2,204,203,200_PIsitb-sticker-arrow-click,-76_AA300_SH20_OU09_.jpg" width="320px"&gt;&lt;/p&gt;
-
-&lt;h2&gt;コンピュータ・プログラミングの概念・技法・モデル(CTMCP)&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;言語：Oz(Mozart)&lt;/li&gt;
-&lt;li&gt;プログラミングパラダイムの種類をたくさん紹介しているのが良い。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src="http://ec2.images-amazon.com/images/I/51iXhiKTamL._SL500_AA300_.jpg" width="320px"&gt;&lt;/p&gt;
-
-&lt;h2&gt;型システム入門(TaPL)&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;言語：Ocaml&lt;/li&gt;
-&lt;li&gt;前提として離散数学、論理学、高階関数型プログラミング言語の知識、コンパイラの基礎的な概念が必要だけど面白そう。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src="http://ec2.images-amazon.com/images/I/41gusdgRAkL._BO2,204,203,200_PIsitb-sticker-arrow-click,TopRight,35,-76_AA300_SH20_OU09_.jpg" width="320px"&gt;&lt;/p&gt;
-
-&lt;h2&gt;なるほどUNIXプロセス(Rubyで学ぶプロセスの基礎)&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;言語：Ruby&lt;/li&gt;
-&lt;li&gt;そらくんがオススメって言ってました。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src="http://tatsu-zine.com/images/books/87/cover_s.jpg" width="320px"&gt;&lt;/p&gt;
-
-&lt;h2&gt;アンケート結果&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;RubyとかRailsとかより、業務から離れたもの(パラダイムのちがうもの)を学びたいという意見があった。&lt;/li&gt;
-&lt;li&gt;SICPは読んだことがある人が多かった。&lt;/li&gt;
-&lt;li&gt;関数型言語をやりたいという意見が多かった。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2&gt;すごいHaskellたのしく学ぼう輪読会！&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;毎週月曜に担当者持ち回りで、担当者は読んだところを要約して聴きに来た人に説明する。&lt;/li&gt;
-&lt;li&gt;聴きに来た人は分からないこととか思ったこととかあったらその場ですぐ発言する(そのためのマイク2本)。&lt;/li&gt;
-&lt;li&gt;堅い感じではなくなるべくワイワイする。&lt;/li&gt;
-&lt;li&gt;完走したら関東の関数型言語erを集めてLT大会をしたい。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1&gt;第7章 型や型クラスを自分で作ろう 前編&lt;/h1&gt;
-
-&lt;p&gt;2週に渡って第7章を読みます。&lt;/p&gt;
-
-&lt;h3&gt;今回学ぶこと&lt;/h3&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Bool, Int, Char, Maybeみたいなデータ型を自分で作る方法を学ぶ&lt;/li&gt;
-&lt;li&gt;データ型をモジュールとしてエクスポートしてみる&lt;/li&gt;
-&lt;li&gt;レコード構文を使ってデータ型を定義する&lt;/li&gt;
-&lt;li&gt;型引数について学ぶ&lt;/li&gt;
-&lt;li&gt;インスタンスを自動導出してみる&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2&gt;データ型？&lt;/h2&gt;
-
-&lt;p&gt;ghciを起動して &lt;code&gt;:i Bool&lt;/code&gt; とかやってみてください。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;Prelude&amp;gt; :i Bool
-data Bool = False | True        -- Defined in `GHC.Types&amp;#39;
-instance Bounded Bool -- Defined in `GHC.Enum&amp;#39;
-instance Enum Bool -- Defined in `GHC.Enum&amp;#39;
-instance Eq Bool -- Defined in `GHC.Classes&amp;#39;
-instance Ord Bool -- Defined in `GHC.Classes&amp;#39;
-instance Read Bool -- Defined in `GHC.Read&amp;#39;
-instance Show Bool -- Defined in `GHC.Show&amp;#39;
-Prelude&amp;gt; :i Maybe
-data Maybe a = Nothing | Just a         -- Defined in `Data.Maybe&amp;#39;
-instance Eq a =&amp;gt; Eq (Maybe a) -- Defined in `Data.Maybe&amp;#39;
-instance Monad Maybe -- Defined in `Data.Maybe&amp;#39;
-instance Functor Maybe -- Defined in `Data.Maybe&amp;#39;
-instance Ord a =&amp;gt; Ord (Maybe a) -- Defined in `Data.Maybe&amp;#39;
-instance Read a =&amp;gt; Read (Maybe a) -- Defined in `GHC.Read&amp;#39;
-instance Show a =&amp;gt; Show (Maybe a) -- Defined in `GHC.Show&amp;#39;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Bool は False か True をとる&lt;/li&gt;
-&lt;li&gt;Maybe a は Nothing か Just a をとる&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;これがデータ型です。&lt;/p&gt;
-
-&lt;p&gt;今日話すところのデータ型 = 代数的データ型(A|B) = 集合論でいうところの直和型(A+B) = 直積型の総和&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://ja.wikipedia.org/wiki/%E4%BB%A3%E6%95%B0%E7%9A%84%E3%83%87%E3%83%BC%E3%82%BF%E5%9E%8B"&gt;代数的データ型&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;blockquote&gt;
-&lt;p&gt;1個以上のコンストラクタがあり、各コンストラクタには0個以上の引数がある。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://ja.wikipedia.org/wiki/%E7%9B%B4%E5%92%8C#.E9.9B.86.E5.90.88.E3.81.AE.E7.9B.B4.E5.92.8C"&gt;直和&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;blockquote&gt;
-&lt;p&gt;共通部分が空集合であるような二つの集合の和集合を表す。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://jutememo.blogspot.jp/2008/07/haskell-instance.html"&gt;Haskell の代数的データ型と型クラス、instance 宣言の関係&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src="http://static.flickr.com/3004/2652003884_a25c578931.jpg" alt=""&gt;&lt;/p&gt;
-
-&lt;h2&gt;新しいデータ型を定義する&lt;/h2&gt;
-
-&lt;p&gt;data宣言は下のような構文になっています。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;data 型構築子 型引数 …
-  = データ構築子A 型式A …
-  | データ構築子B 型式B …
-  ...
-  | データ構築子N 型式N …
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-&lt;li&gt;型構築子 (type constructor) (型コンストラクタ)
-
-&lt;ul&gt;
-&lt;li&gt;データ型の名前。必要であれば引数に型引数を指定できる。&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;データ構築子 (data constructor) (値コンストラクタ)
-
-&lt;ul&gt;
-&lt;li&gt;実際の値の生成やパターンマッチのときに使用する。&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;ちなみに &lt;code&gt;[]&lt;/code&gt; や &lt;code&gt;-&gt;&lt;/code&gt; も型構築子です。&lt;/p&gt;
-
-&lt;h2&gt;データ型を操作する&lt;/h2&gt;
-
-&lt;p&gt;はじめに、bookIdとtitleを持つBookinfoというデータ型を作ってみましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data Bookinfo = Book Int String
-  deriving (Show)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;このように、値コンストラクタを書くときは、後ろに型を付け足すことができ、それらは値コンストラクタに与える引数の型になります。
-型があって、その型を構成する部品を書くようなイメージです。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :t Book
-Book :: Int -&gt; String -&gt; Bookinfo
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;実のところ、値コンストラクタは、そのデータ型の値を返す関数なのです。&lt;/p&gt;
-
-&lt;p&gt;次に、BookからbookIdを取得する関数、titleを取得する関数を書いてみましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;bookId :: Bookinfo -&gt; Int
-bookId (Book bookId _) = bookId
-
-title :: Bookinfo -&gt; String
-title (Book _ title) = title
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;なんとなく理解できましたか？
-では、次に長方形と円という2種類の図形を扱うことにしましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data Shape = Circle Float Float Float
-           | Rectangle Float Float Float Float
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Circle値コンストラクタには、浮動小数を受け取るフィールドが3つあります。
-ここでは、最初の2つのフィールドは円の中心の座標で、3つ目のフィールドは円の半径です。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :t Circle
-Circle :: Float -&gt; Float -&gt; Float -&gt; Shape
-&amp;gt; :t Rectangle
-Rectangle :: Float -&gt; Float -&gt; Float -&gt; Float -&gt; Shape
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;では、Shapeを引数に取って、その面積を返すarea関数を作ってみましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;area :: Shape -&gt; Float
-???
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3&gt;hint&lt;/h3&gt;
-
-&lt;ul&gt;
-&lt;li&gt;値コンストラクタはパターンマッチに使えます。&lt;/li&gt;
-&lt;li&gt;円周率は &lt;code&gt;pi&lt;/code&gt; が使えます。&lt;/li&gt;
-&lt;li&gt;絶対値は &lt;code&gt;abs&lt;/code&gt; 関数が使えます。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;toString :: Bool -&gt; String
-toString True = &amp;quot;True&amp;quot;
-toString False = &amp;quot;False&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2&gt;実際の例&lt;/h2&gt;
-
-&lt;h3&gt;&lt;a href="https://github.com/scotty-web/scotty"&gt;scotty-web/scotty&lt;/a&gt;&lt;/h3&gt;
-
-&lt;p&gt;Scottyは、RubyのSinatraライクなWAFです。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ cabal install scotty
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;{-# LANGUAGE OverloadedStrings #-}
-import Web.Scotty
-
-main = scotty 3000 $ do
-  get &amp;quot;/&amp;quot; $ text &amp;quot;hello&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;scottyの例外の定義にデータ型を使っている。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data Except = Forbidden | NotFound Int | StringEx String
-  deriving (Show, Eq)
-
-…
-
-main :: IO ()
-main = scottyT 3000 id id $ do
-    middleware logStdoutDev
-    defaultHandler handleEx -- 例外のハンドラをセットできる
-
-    get &amp;quot;/&amp;quot; $ do
-      ...
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2&gt;データ型をモジュールとしてエクスポートしてみる&lt;/h2&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;-- Shapes.hs
-module
-( Shapes
-, area
-)
-
-data Shape = Circle Float Float Float
-           | Rectangle Float Float Float Float
-  deriving (Show)
-
-area :: Shape -&gt; Float
-area (Circle _ _ r) = pi * r ^ 2
-area (Rectangle x1 y1 x2 y2) = (abs (x2 - x1)) * (abs (y2 - y1))
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;-- Main.hs
-import Shapes
-
-main = do
-  print $ Circle 1 1 1
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;これで実行すると、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ runghc Main.hs 
-
-2.hs:4:11: Not in scope: data constructor `Circle&amp;#39;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;と怒られると思います。
-値コンストラクタは明示的に書かないといけないのかというと、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;module
-( Shapes
-, Circle
-, Rectangle
-, area
-)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;とすると、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;Shapes.hs:3:4: Not in scope: type constructor or class `Circle&amp;#39;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;というわけで、この書き方は型コンストラクタか型クラスしかエクスポートできないみたいです。
-値コンストラクタをエクスポートするには、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;module
-( Shapes(Circle, Rectangle)
-, area
-)
-
--- or
-
-module
-( Shapes(..) -- 普通はこっちの書き方をするようです
-, area
-)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;また、特定のモジュールの中から何をインポートするかを指定することもできます。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;import Shapes(Shape(..))
-import Shapes(area)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2&gt;レコード構文を使ってデータ型を定義する&lt;/h2&gt;
-
-&lt;p&gt;名前、年齢、身長、体重、電話番号を持つユーザーを表すデータ型とそれぞれのデータにアクセスするための関数を作ってみましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data User = User String Int Float Float String
-  deriving (Show)
-
-name :: User -&gt; String
-name (User name _ _ _ _ ) = name
-
-age :: User -&gt; Int
-age (User _ age _ _ _) = age
-
-height :: User -&gt; Float
-height (User _ _ height _ _) = height
-
-weight :: User -&gt; Float
-weight (User _ _ _ weight _) = weight
-
-phoneNumber :: User -&gt; String
-phoneNumber (User _ _ _ _ number) = number
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code&gt;&amp;gt; User &amp;quot;John&amp;quot; 32 180 80 &amp;quot;123-4567&amp;quot;
-User &amp;quot;John&amp;quot; 32 180.0 80.0 &amp;quot;123-4567&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;フィールドが多いと大変だし分かりづらいですね。
-そこでレコード構文です。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;data 型構築子 型引数 ...
-  = データ構築子A {フィールド名A :: 型A, … }
-  | ...
-  | データ構築子Z {フィールド名Z :: 型Z, ... }
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;この構文を使うと、先ほどの定義は&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data User = User { name :: String
-                 , age :: Int
-                 , height :: Float
-                 , weight :: Float
-                 , phoneNumber :: String } deriving (Show)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;こうするとフィールドを取得する関数も自動で作られます。
-また、レコード構文を使うと出力が変わります。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;&amp;gt; User &amp;quot;John&amp;quot; 32 180 80 &amp;quot;123-4567&amp;quot;
-User {name = &amp;quot;John&amp;quot;, age = 32, height = 180.0, weight = 80.0, phoneNumber = &amp;quot;123-4567&amp;quot;}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;また、値コンストラクタにフィールド名を渡すことで順番を変えることができます(すべてのフィールドを埋める必要はあります)。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; User {age = 32, height = 180.0, weight = 80.0, phoneNumber = &amp;quot;123-4567&amp;quot;, name = &amp;quot;John&amp;quot;}
-User {name = &amp;quot;John&amp;quot;, age = 32, height = 180.0, weight = 80.0, phoneNumber = &amp;quot;123-4567&amp;quot;}
-
-&amp;gt; User {age = 32, height = 180.0, weight = 80.0, phoneNumber = &amp;quot;123-4567&amp;quot;}
-
-&amp;lt;interactive&amp;gt;:14:1:
-    Warning: Fields of `User&amp;#39; not initialised: name
-    In the expression:
-      User
-        {age = 32, height = 180.0, weight = 80.0, phoneNumber = &amp;quot;123-4567&amp;quot;}
-    In an equation for `it&amp;#39;:
-        it
-          = User
-              {age = 32, height = 180.0, weight = 80.0, phoneNumber = &amp;quot;123-4567&amp;quot;}
-
-&amp;lt;interactive&amp;gt;:14:1:
-    Warning: Fields of `User&amp;#39; not initialised: name
-    In the expression:
-      User
-        {age = 32, height = 180.0, weight = 80.0, phoneNumber = &amp;quot;123-4567&amp;quot;}
-    In an equation for `it&amp;#39;:
-        it
-          = User
-              {age = 32, height = 180.0, weight = 80.0, phoneNumber = &amp;quot;123-4567&amp;quot;}
-User {name = &amp;quot;*** Exception: &amp;lt;interactive&amp;gt;:14:1-72: Missing field in record construction Main.name
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2&gt;型引数&lt;/h2&gt;
-
-&lt;p&gt;型コンストラクタは型引数を取ることができます。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;&amp;gt; :i Maybe
-data Maybe a = Nothing | Just a
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;値コンストラクタが引数を取って新しい値を生み出すものでしたが、同じように型コンストラクタは型引数を取って新しい型を作るものです。&lt;/p&gt;
-
-&lt;p&gt;単なるMaybeという型の値は存在できません。&lt;/p&gt;
-
-&lt;p&gt;MaybeにIntを渡すとMaybe Int型が得られますし、MaybeにStringを渡せばMaybe String型が得られます。&lt;/p&gt;
-
-&lt;p&gt;こうすることで、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data IntMaybe = INothing | IJust Int
-data StringMaybe = SNothing | SJust String
-data ShapeMaybe = ShNothing | ShJust Shape
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;のように、中身の型ごとに別々の型にする必要がなくなります。&lt;/p&gt;
-
-&lt;p&gt;実は、ここまですでにリスト型で型引数を使っていたりします。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :i []
-data [] a = [] | a : [a]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;また、型引数を持つ型は多相型と呼ばれます。&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://itpro.nikkeibp.co.jp/article/COLUMN/20060905/247156/"&gt;第2回　多相性（ポリモーフィズム）への理解を深める&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;blockquote&gt;
-&lt;p&gt;多相性は「ある関数や型を、複数の型に対して使用できる」という性質を示す言葉です。こうした性質を持つ関数であれば、数値計算や文字列の連結、I/O（入出力）処理など一見全く違うように見えるような処理を、あたかも同じもののように扱うことができます。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h2&gt;リストに複数の型を含める&lt;/h2&gt;
-
-&lt;p&gt;Int、Float、Charを含んだリストを作るとします。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; [1, 1.0, &amp;#39;a&amp;#39;]
-
-&amp;lt;interactive&amp;gt;:3:2:
-    No instance for (Num Char)
-      arising from the literal `1&amp;#39;
-    Possible fix: add an instance declaration for (Num Char)
-    In the expression: 1
-    In the expression: [1, 1.0, &amp;#39;a&amp;#39;]
-    In an equation for `it&amp;#39;: it = [1, 1.0, &amp;#39;a&amp;#39;]
-
-&amp;lt;interactive&amp;gt;:3:5:
-    No instance for (Fractional Char)
-      arising from the literal `1.0&amp;#39;
-    Possible fix: add an instance declaration for (Fractional Char)
-    In the expression: 1.0
-    In the expression: [1, 1.0, &amp;#39;a&amp;#39;]
-    In an equation for `it&amp;#39;: it = [1, 1.0, &amp;#39;a&amp;#39;]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;そのままだと[] Numで型推論されてCharを含められなくなるので、新しいデータ型を定義します。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data MyType = I Int | F Float | C Char
-  deriving (Show)
-
-&amp;gt; [I 1, F 1.0, C &amp;#39;a&amp;#39;]
-[I 1,F 1.0,C &amp;#39;a&amp;#39;]
-
-&amp;gt; :t [I 1, F 1.0, C &amp;#39;a&amp;#39;]
-[I 1, F 1.0, C &amp;#39;a&amp;#39;] :: [MyType]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;こうすることで、[] MyType型を作ることができます。&lt;/p&gt;
-
-&lt;p&gt;では、[MyType]のリストからC要素を取り出すfilterC関数を作ってみましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;-- 再帰を使う
-filterC :: [MyType] -&gt; [MyType]
-filterC _ [] = []
-filterC (x:xs)
-  | ???
-  | ???
-
--- リスト内包表記を使う
-[x | x &amp;lt;- [I 1, F 1.0, C &amp;#39;a&amp;#39;], ???]
-
--- filter関数を使う
-filterC :: [MyType] -&gt; [MyType]
-filterC = filter isC
-  where ???
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2&gt;インスタンスを自動導出してみる&lt;/h2&gt;
-
-&lt;p&gt;もし T が次のように定義された代数的データ型であるなら&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;data cx =&amp;gt; T u1 ... uk  = K1 t11 ... t1k1 | ...| Kn tn1 ... tnkn
-  deriving (C1, ..., Cm)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;(ここで m&amp;gt;=0 および括弧は m=1 の場合省略される)、 導出インスタンス宣言は、クラス C について、以下の条件が なりたてば、可能となる。&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;C が Eq、Ord、Enum、Bounded、Show あるいは Read のうちの どれか。&lt;/li&gt;
-&lt;li&gt;cx&amp;#39; =&amp;gt; C tij が構成要素の型 tij のそれぞれについて保存されているような 文脈 cx&amp;#39; がある。&lt;/li&gt;
-&lt;li&gt;C が Bounded である場合。このとき、この型は列挙型 (すべての構成子が無引数)であるか、または構成子が一つしかないかの どちらかでなければならない。&lt;/li&gt;
-&lt;li&gt;C が Enum である場合。このとき、この型は列挙型 でなければならない。&lt;/li&gt;
-&lt;li&gt;T u1 ... ukを C のインスタンスとしたプログラム内の別の個所で明示的な インスタンス宣言があってはならない。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;整理すると、derivingキーワードを使うことで、特定の型クラスのインスタンス宣言を自動生成する(振る舞いがサポートされる)ことができます、ということです。
-振る舞いがサポートされるということは、つまり関数が生えるということです。&lt;/p&gt;
-
-&lt;h2&gt;EqおよびOrdの導出インスタンス&lt;/h2&gt;
-
-&lt;p&gt;EqおよびOrdでは、(==)、(/=)、 compare、(&amp;lt;)、(&amp;lt;=)、(&amp;gt;)、 (&amp;gt;=)、max および min が導入されます。&lt;/p&gt;
-
-&lt;p&gt;(==) や (/=) などで比較するときは、値コンストラクタの書くフィールドがすべて一致しているかを (==) で比較します。
-なので、すべてのフィールドの型がEq型クラスのインスタンスでないと自動導出することはできません。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;-- 各フィールドが一致するか (==) で比較します
--- そのため、すべてのフィールドの型がEq型クラスのインスタンスでないと自動導出することはできません
-data User = User { name :: String
-                 , age :: Int
-                 , height :: Float
-                 , weight :: Float
-                 , phoneNumber :: String }
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2&gt;Enumの導出インスタンス&lt;/h2&gt;
-
-&lt;p&gt;Enumクラスに対する導出インスタンス宣言は列挙型(データ型が無引数構成子のみを含む型)(つまり引数なしの値コンストラクタ)にのみ可能です。
-succ と pred 演算子で、左から右へ、次の値、前の値を与えられるようになります。&lt;/p&gt;
-
-&lt;h2&gt;Boundedの導出インスタンス&lt;/h2&gt;
-
-&lt;p&gt;Boundedでは minBound および maxBound というクラスメソッドが導入されます。&lt;/p&gt;
-
-&lt;h2&gt;ReadおよびShowの導出インスタンス&lt;/h2&gt;
-
-&lt;p&gt;ReadおよびShowでは showsPrec、readsPrec、showList、readListが導入されます。
-これらは値から文字列への相互変換のために用いられます。&lt;/p&gt;
-
-&lt;h2&gt;何曜日でもいいよ&lt;/h2&gt;
-
-&lt;p&gt;使える自動導出を全部使って、曜日のデータ型を作ってみましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data Day = Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday deriving (Eq, Ord, Show, Read, Bounded, Enum)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;導入されたメソッドを呼んでみましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; Wedneday
-&amp;gt; show Wednesday
-&amp;gt; read &amp;quot;Wednesday&amp;quot; :: Day
-&amp;gt; Saturday == Sunday
-&amp;gt; Monday `compare` Wednesday
-&amp;gt; minBound :: Day
-&amp;gt; succ Monday
-&amp;gt; pred Saturday
-&amp;gt; [minBound .. maxBound] :: [Day]
-&lt;/code&gt;&lt;/pre&gt;
 </content>
   </entry>
 </feed>
