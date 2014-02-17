@@ -11,6 +11,7 @@
 .header-inner {
   @include inner;
   overflow: hidden;
+  min-width: 600px
 }
 
 .header-text {
