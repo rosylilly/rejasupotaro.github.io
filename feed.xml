@@ -5,10 +5,268 @@
   <id>http://rejasupotaro.github.io/</id>
   <link href="http://rejasupotaro.github.io/"/>
   <link href="http://rejasupotaro.github.io/feed.xml" rel="self"/>
-  <updated>2014-02-11T00:00:00+09:00</updated>
+  <updated>2014-02-18T00:00:00+09:00</updated>
   <author>
     <name>rejasupotaro</name>
   </author>
+  <entry>
+    <title>Rebuild.fmクライアント(非公式)開発の裏話</title>
+    <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/18/38.html"/>
+    <id>http://rejasupotaro.github.io/2014/02/18/38.html</id>
+    <published>2014-02-18T00:00:00+09:00</published>
+    <updated>2014-02-18T08:54:29+09:00</updated>
+    <author>
+      <name>rejasupotaro</name>
+    </author>
+    <content type="html">&lt;p&gt;&lt;img src="https://raw2.github.com/rejasupotaro/Rebuild/master/screenshot.png" alt=""&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="http://rejasupotaro.github.io/2014/02/17/37.html"&gt;Rebuild.fmクライアント(非公式)をリリースしました&lt;/a&gt;の開発の中で生まれたtipsや思い出を紹介しようと思います。
+結構長いです。&lt;/p&gt;
+
+&lt;h1&gt;目次&lt;/h1&gt;
+
+&lt;ul&gt;
+&lt;li&gt;アプリのバージョニング&lt;/li&gt;
+&lt;li&gt;RSSフィードの取得&lt;/li&gt;
+&lt;li&gt;メディアの再生/停止ボタン&lt;/li&gt;
+&lt;li&gt;Show Notesの表示&lt;/li&gt;
+&lt;li&gt;MenuDeledate&lt;/li&gt;
+&lt;li&gt;データの保存とテスト&lt;/li&gt;
+&lt;li&gt;Tweetの取得&lt;/li&gt;
+&lt;li&gt;FontAwesome&lt;/li&gt;
+&lt;li&gt;通知の管理&lt;/li&gt;
+&lt;li&gt;ライセンス表示&lt;/li&gt;
+&lt;li&gt;進捗と開発のボトルネック&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1&gt;バージョニング&lt;/h1&gt;
+
+&lt;p&gt;Android端末の設定からアプリ情報を見ると &amp;quot;バージョン0.1.2-SHA1&amp;quot; の形式になっていると思います。
+Androidアプリのバージョンコードは整数でなければなりませんが、バージョン名は文字列なので、開発者が好きなように使うことができます。
+たとえばビルドした日付を入れている開発者もいますし、独自に定義したコードを使っている人もいます。
+僕の場合はオープンソースでやってるし、日付よりGitのログの方が有用かなと思って、このようにしました。&lt;/p&gt;
+
+&lt;p&gt;というか思い立って調べたら&lt;a href="https://plus.google.com/+JakeWharton/posts/6f5TcVPRZij"&gt;Jake Wharton神&lt;/a&gt;の記事が出てきたので、ほぼそのとおりに設定しました。
+以下、アプリのビルド設定の一部です。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;def versionMajor = 0
+def versionMinor = 1
+def versionPatch = 2
+def versionBuild = 0 // bump for dogfood builds, public betas, etc.
+
+def gitSha() {
+    return &amp;#39;git rev-parse --short HEAD&amp;#39;.execute().text.trim()
+}
+
+android {
+    compileSdkVersion 18
+    buildToolsVersion &amp;quot;19.0.1&amp;quot;
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 18
+        versionCode versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100 + versionBuild
+        versionName &amp;quot;${versionMajor}.${versionMinor}.${versionPatch}-${gitSha()}&amp;quot;
+    }
+
+    ...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;こんな感じで、バージョンコードとバージョンネームの生成はコードに任せています。&lt;/p&gt;
+
+&lt;h1&gt;RSSフィードの取得&lt;/h1&gt;
+
+&lt;p&gt;エピソードの取得ですが、アプリの起動時に&lt;a href="http://feeds.rebuild.fm/rebuildfm"&gt;Rebuild.fmのRSS&lt;/a&gt;を取得しています。
+Androidで使えるRSSクライアントが見当たらなかったので、SAXParserを使って頑張ってparseしています。&lt;/p&gt;
+
+&lt;p&gt;一応ライブラリにしました：&lt;a href="https://github.com/rejasupotaro/AsyncRssClient"&gt;rejasupotaro / AsyncRssClient&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;今思うとjsonicとgsonを使って、&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;before&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code&gt;url -&gt; [ xml -&gt; entity ] -&gt; entity
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;after&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code&gt;url, meta -&gt; [ xml -&gt; json -&gt; entity ] -&gt; entity
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;こうした方が良かったなと思いました。&lt;/p&gt;
+
+&lt;h1&gt;メディアの再生/停止ボタン&lt;/h1&gt;
+
+&lt;p&gt;最近&lt;a href="http://localhost:9292/2014/02/09/35.html"&gt;別のアプリ&lt;/a&gt;でも再生/停止ボタンを作ったのですが、&lt;/p&gt;
+
+&lt;p&gt;&lt;img src="https://github.com/rejasupotaro/KinMozaViewer/blob/master/screenshot.png?raw=true" alt=""&gt;&lt;/p&gt;
+
+&lt;p&gt;2つのステートを持つImageViewは、CheckBoxを使うと簡単に実装できます。&lt;/p&gt;
+
+&lt;h3&gt;media_start_and_pause_button.xml&lt;/h3&gt;
+
+&lt;p&gt;まず、drawableにチェックされているときと、チェックされていないときの画像を定義します。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;selector xmlns:android=&amp;quot;http://schemas.android.com/apk/res/android&amp;quot;&amp;gt;
+    &amp;lt;item
+            android:state_checked=&amp;quot;true&amp;quot;
+            android:drawable=&amp;quot;@android:drawable/ic_media_pause&amp;quot; /&amp;gt;
+    &amp;lt;item
+            android:state_checked=&amp;quot;false&amp;quot;
+            android:drawable=&amp;quot;@android:drawable/ic_media_play&amp;quot; /&amp;gt;
+&amp;lt;/selector&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;style.xml&lt;/h3&gt;
+
+&lt;p&gt;次に、Widget.CompoundButton.CheckBoxを継承したチェックボックスのスタイルを作って、drawableを上書きします。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;style name=&amp;quot;MediaStartAndPauseButton&amp;quot; parent=&amp;quot;android:Widget.CompoundButton.CheckBox&amp;quot;&amp;gt;
+    &amp;lt;item name=&amp;quot;android:button&amp;quot;&amp;gt;@drawable/media_start_and_pause_button&amp;lt;/item&amp;gt;
+    &amp;lt;item name=&amp;quot;android:layout_width&amp;quot;&amp;gt;wrap_content&amp;lt;/item&amp;gt;
+    &amp;lt;item name=&amp;quot;android:layout_height&amp;quot;&amp;gt;wrap_content&amp;lt;/item&amp;gt;
+&amp;lt;/style&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;FragmentのLayout&lt;/h3&gt;
+
+&lt;p&gt;チェックボックスに定義したスタイルを適用します。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;CheckBox
+        android:id=&amp;quot;@+id/media_play_and_pause_button&amp;quot;
+        style=&amp;quot;@style/MediaPlayAndPauseButton&amp;quot;
+        android:layout_marginLeft=&amp;quot;@dimen/margin_icon_button&amp;quot;
+        android:layout_gravity=&amp;quot;center&amp;quot;
+        /&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;こうすることでOn/Off時の画像の切り替えのコードを書かなくてよくなります。また、&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class="java"&gt;mMediaStartAndPauseButton.setOnCheckedChangeListener(
+        new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    start(episode);
+                } else {
+                    pause();
+                }
+            }
+        });
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;OnCheckedChangeListenerが使えたり、isCheckedメソッドが使えたりして、かなり具合がいいです。&lt;/p&gt;
+
+&lt;h1&gt;Show Notesの表示&lt;/h1&gt;
+
+&lt;p&gt;書いてる途中で寝てしまったのでうちに帰ってから書く。&lt;/p&gt;
+
+&lt;h1&gt;MenuDeledate&lt;/h1&gt;
+
+&lt;p&gt;書いてる途中で寝てしまったのでうちに帰ってから書く。&lt;/p&gt;
+
+&lt;h1&gt;データの保存とテスト&lt;/h1&gt;
+
+&lt;p&gt;書いてる途中で寝てしまったのでうちに帰ってから書く。&lt;/p&gt;
+
+&lt;h1&gt;Tweetの取得&lt;/h1&gt;
+
+&lt;p&gt;書いてる途中で寝てしまったのでうちに帰ってから書く。&lt;/p&gt;
+
+&lt;h1&gt;FontAwesome&lt;/h1&gt;
+
+&lt;p&gt;書いてる途中で寝てしまったのでうちに帰ってから書く。&lt;/p&gt;
+
+&lt;h1&gt;通知の管理&lt;/h1&gt;
+
+&lt;p&gt;書いてる途中で寝てしまったのでうちに帰ってから書く。&lt;/p&gt;
+
+&lt;h1&gt;ライセンス画面&lt;/h1&gt;
+
+&lt;p&gt;書いてる途中で寝てしまったのでうちに帰ってから書く。&lt;/p&gt;
+
+&lt;h1&gt;進捗と開発のボトルネック&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/frequency.png" alt=""&gt;&lt;/p&gt;
+
+&lt;p&gt;Code Frequencyをご覧のとおり、11月に着手してその一週間後に機能的にはほぼ完成していました。
+そのあと忙しくなってあまり時間が取れずに2月のリリースになったのですが、何がそんな大変だったのかというと、UXとかUIを考えるのにすごく時間がかかりました。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/episode_detail_fragment.png" alt=""&gt;&lt;/p&gt;
+
+&lt;p&gt;XMLを書いては端末にインストールして確認し、場合によってはFragmentにしたりActivityに戻したりしながら進めてるので、すごく時間がかかっています。
+チームで開発しているときは、各々が得意分野をやりますが、一人だと全部自分でしないといけないので、自分の弱点がそのまま開発のボトルネックになるということを実感しました。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;リポジトリはこちら：&lt;a href="https://github.com/rejasupotaro/Rebuild"&gt;rejasupotaro / Rebuild&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Rebuild.fmクライアント(非公式)をリリースしました</title>
+    <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/17/37.html"/>
+    <id>http://rejasupotaro.github.io/2014/02/17/37.html</id>
+    <published>2014-02-17T00:00:00+09:00</published>
+    <updated>2014-02-18T08:54:29+09:00</updated>
+    <author>
+      <name>rejasupotaro</name>
+    </author>
+    <content type="html">&lt;h1&gt;Rebuild.fm for Android (Unofficial)&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src="https://raw2.github.com/rejasupotaro/Rebuild/master/screenshot.png" alt=""&gt;&lt;/p&gt;
+
+&lt;h2&gt;Rebuild.fm for Android とは&lt;/h2&gt;
+
+&lt;p&gt;Rebuild.fm for Androidとは、&lt;a href="https://twitter.com/miyagawa"&gt;miyagawaさん&lt;/a&gt;のPodcast、&lt;a href="http://rebuild.fm/"&gt;Rebuild.fm&lt;/a&gt;専用のPodcastアプリです。&lt;/p&gt;
+
+&lt;p&gt;このアプリ自体はオープンソースで開発していて、READMEにインストール手順は書いてあるのですが、あまり使ってくれる人がいませんでした。
+開発するモチベーションを保つためにフィードバックが欲しくて、マーケットに出そうかなという話をmiyagawaさんにしたら快諾してくれたので、この度リリースしました。&lt;/p&gt;
+
+&lt;p&gt;(本当は一周年記念に合わせてリリースしたかったけど、リリース準備してたら一部端末でOOMになるバグが見つかったりして間に合わなかった)&lt;/p&gt;
+
+&lt;h2&gt;「Rebuild.fm専用？それって機能が限定されたPodcastアプリでは？」&lt;/h2&gt;
+
+&lt;p&gt;よくあるPodcastアプリは無機質な感じで、よりRebuild.fmの世界観を表現したいと思ったからとか、twitterがテキストを140字に制限することで使いやすさを実現しているように、Rebuild.fmに限定することで使いたすくしたかった、という優等生的な回答をしつつ、実際のところは僕がPodcastはRebuild.fmしか聴いていなかったので、Rebuild.fmに特化した使いやすいアプリが欲しかったというのが一番の理由でした。&lt;/p&gt;
+
+&lt;p&gt;使いやすさについて考えるために、僕とRebuild.fmの関わり方について考えました。&lt;/p&gt;
+
+&lt;h2&gt;僕とRebuild.fm&lt;/h2&gt;
+
+&lt;p&gt;「Rebuild.fmで言ってたけど、鳥はAndroidの方がやりやすいよね」とか「ほら、この前Rebuild.fmで言ってた〜」みたいに、エンジニアと話すとRebuild.fmが話題になったり、ブログとかイベントでネタにされていたりとか、あとは新しいエピソードが公開されたあと、みんなはどういう感想を持ったんだろうと思いながらtwitterでハッシュタグを追ったりとか、こういうことを図にしてみたら下のようになりました。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/miyagawa.png" alt=""&gt;&lt;/p&gt;
+
+&lt;p&gt;抽象的な図になってしまったのでもう少し分かりやすく説明すると、僕が小学生の頃には笑う犬の生活という番組が流行っていて、放送されると翌日に「見た？面白かったよね！」っていう話をみんなしてて、番組を見てると話の輪に入れるみたいな、そんな感じです。&lt;/p&gt;
+
+&lt;h2&gt;Rebuild.fmアプリの見せ方&lt;/h2&gt;
+
+&lt;p&gt;というわけで、Rebuild.fm本家の雰囲気を踏襲したデザインにしつつ、&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;エピソードに対する周りの人の反応をどう見せるか&lt;/li&gt;
+&lt;li&gt;いかにしてエピソード内の情報を見やすくするか&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;ということを考えて作りました。
+考えて作ったというだけで、今のところ自分が納得できるクオリティになっているかというと、そうは思いません。
+ですが、リリース日を伸ばすのも良くないと思い、version 0.1という位置付けでリリースしました。&lt;/p&gt;
+
+&lt;p&gt;ダウンロードは下のリンクからどうぞ。&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="https://play.google.com/store/apps/details?id=rejasupotaro.rebuild"&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/en_generic_rgb_wo_60.png" alt=""&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;リポジトリはこちら：&lt;a href="https://github.com/rejasupotaro/Rebuild"&gt;rejasupotaro / Rebuild&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;開発の裏話は別の記事にしました：&lt;a href="http://rejasupotaro.github.io/2014/02/18/38.html"&gt;Rebuild.fmクライアント(非公式)開発の裏話&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;どうぞよろしくお願いします。&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>How to build a career through github activities</title>
     <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/11/36.html"/>
@@ -1179,343 +1437,6 @@ Functorになるには &lt;code&gt;* -&gt; *&lt;/code&gt; という種類を持�
 &lt;ul&gt;
 &lt;li&gt;&lt;a href="http://sugoihaskell.github.io/"&gt;sugoihaskell.github.io&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
-</content>
-  </entry>
-  <entry>
-    <title>2014/01/30</title>
-    <link rel="alternate" href="http://rejasupotaro.github.io/2014/01/30/32.html"/>
-    <id>http://rejasupotaro.github.io/2014/01/30/32.html</id>
-    <published>2014-01-30T00:00:00+09:00</published>
-    <updated>2014-02-12T14:14:50+09:00</updated>
-    <author>
-      <name>rejasupotaro</name>
-    </author>
-    <content type="html">&lt;h3&gt;〜今日の夕方〜&lt;/h3&gt;
-
-&lt;blockquote&gt;
-&lt;p&gt;「僕らも&lt;a href="http://square.github.io/"&gt;Square&lt;/a&gt;みたいに積極的にライブラリ公開していきたいですね」&lt;br&gt;
-「ですねー。maven centralにライブラリを上げたことありますか？」&lt;br&gt;
-「ないですね。社内ライブラリはS3で管理しているので、mavenリポジトリはそっちに上げたことはありますが」&lt;br&gt;
-「おっ、そうなんですか。じゃあmaven centralにも上げましょうよ！」&lt;br&gt;
-「maven centralって面倒なんですよね。あっ、じゃあどっちが先にデプロイできるか競争しましょう！」  &lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;blockquote class="twitter-tweet" lang="en"&gt;&lt;a href="{% oembed https://twitter.com/rejasupotaro/status/428818040407326721 %}"&gt;&lt;/a&gt;&lt;/blockquote&gt;&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;&lt;/p&gt;
-
-&lt;p&gt;今になってみるとこのとき &lt;a href="https://twitter.com/__gfx__"&gt;@&lt;strong&gt;gfx&lt;/strong&gt;&lt;/a&gt; さん、苦笑いしていたように思える。&lt;/p&gt;
-
-&lt;h3&gt;家に帰ってやり方を調べる僕&lt;/h3&gt;
-
-&lt;p&gt;&lt;a href="http://d.hatena.ne.jp/int128/20130409/1365434513"&gt;GradleでMaven Central Repositoryに成果物をリリースする&lt;/a&gt; とか &lt;a href="http://felipecsl.com/blog/2013/12/06/publishing-an-android-library-to-maven-central/"&gt;Publishing an Android Library to Maven Central With Gradle&lt;/a&gt; とかを読みました。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;!!!Wait for your issue to be “Resolved”, that may take up to 2 business days (!!!)!!!
-!!!That is really piece of cake compared to all this Java mess!!!
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;とてもためになりました。&lt;/p&gt;
-
-&lt;p&gt;&lt;blockquote class="twitter-tweet" lang="en"&gt;&lt;a href="{% oembed https://twitter.com/rejasupotaro/status/428874546712567808 %}"&gt;&lt;/a&gt;&lt;/blockquote&gt;&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;blockquote class="twitter-tweet" lang="en"&gt;&lt;a href="{% oembed https://twitter.com/rejasupotaro/status/428883261347995649 %}"&gt;&lt;/a&gt;&lt;/blockquote&gt;&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;&lt;/p&gt;
-
-&lt;p&gt;若者には厳しいシステムでした。&lt;a href="https://twitter.com/rejasupotaro/status/428006626071552000"&gt;拝承&lt;/a&gt;。&lt;/p&gt;
-</content>
-  </entry>
-  <entry>
-    <title>進捗、例外、画面の切り替え</title>
-    <link rel="alternate" href="http://rejasupotaro.github.io/2014/01/30/31.html"/>
-    <id>http://rejasupotaro.github.io/2014/01/30/31.html</id>
-    <published>2014-01-30T00:00:00+09:00</published>
-    <updated>2014-02-12T14:14:50+09:00</updated>
-    <author>
-      <name>rejasupotaro</name>
-    </author>
-    <content type="html">&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201401/state.png" width="600"&gt;&lt;/p&gt;
-
-&lt;p&gt;ネットワークからデータを取ってくるときにProgressBarを回して、正常に読み込みたらコンテンツを、読み込めなかったらエラーを表示したいときどうしますか？&lt;/p&gt;
-
-&lt;h1&gt;愚直な方法&lt;/h1&gt;
-
-&lt;p&gt;全体をFrameLayoutにしてコンテンツの上にProgressView、ErrorViewになるように重ねる。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="xml"&gt;&amp;lt;FrameLayout
-        android:background=&amp;quot;@android:color/holo_blue_light&amp;quot;
-        android:layout_width=&amp;quot;match_parent&amp;quot;
-        android:layout_height=&amp;quot;match_parent&amp;quot;
-        &amp;gt;
-    &amp;lt;LinearLayout
-            android:orientation=&amp;quot;vertical&amp;quot;
-            android:layout_gravity=&amp;quot;center&amp;quot;
-            android:layout_width=&amp;quot;wrap_content&amp;quot;
-            android:layout_height=&amp;quot;wrap_content&amp;quot;
-            &amp;gt;
-        &amp;lt;ImageView
-                android:src=&amp;quot;@drawable/droid&amp;quot;
-                android:layout_gravity=&amp;quot;center&amp;quot;
-                android:layout_width=&amp;quot;wrap_content&amp;quot;
-                android:layout_height=&amp;quot;wrap_content&amp;quot;
-                /&amp;gt;
-        &amp;lt;TextView
-                android:text=&amp;quot;content&amp;quot;
-                android:textSize=&amp;quot;@dimen/default_text_size&amp;quot;
-                android:textColor=&amp;quot;@color/default_text_color&amp;quot;
-                android:layout_gravity=&amp;quot;center&amp;quot;
-                android:layout_width=&amp;quot;wrap_content&amp;quot;
-                android:layout_height=&amp;quot;wrap_content&amp;quot;
-                /&amp;gt;
-    &amp;lt;/LinearLayout&amp;gt;
-    &lt;!-- 以下を元のレイアウトに追加 --&gt;
-    &amp;lt;include
-        android:id=&amp;quot;@+id/progress_view&amp;quot;
-        layout=&amp;quot;@layout/progress_view&amp;quot;
-        android:visibility=&amp;quot;gone&amp;quot;
-        /&amp;gt;
-    &amp;lt;include
-        android:id=&amp;quot;@+id/error_view&amp;quot;
-        layout=&amp;quot;@layout/error_view&amp;quot;
-        android:visibility=&amp;quot;gone&amp;quot;
-        /&amp;gt;
-&amp;lt;/FrameLayout&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;続いてジャバ。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;@InjectView(R.id.progress_view) private View mProgressView;
-@InjectView(R.id.error_view) private View mErrorView;
-
-private void requestRssFeed() {
-    mProgressView.show();
-    mErrorView.hide();
-
-    mRssFeedClient.request(new RssFeedClient.EpisodeClientResponseHandler() {
-        @Override public void onSuccess(List&amp;lt;Episode&amp;gt; episodeList) {
-            BusProvider.getInstance().post(new LoadEpisodeListCompleteEvent(episodeList));
-            mProgressView.hide();
-            mErrorView.hide();
-        }
-
-        @Override public void onFailure() {
-            ToastUtils.show(getActivity(), &amp;quot;An error occurred while requesting rss feed.&amp;quot;);
-            mProgressView.hide();
-            mErrorView.show();
-        }
-    });
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;悪くはないけど、&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;元のレイアウトをあまり変更したくない&lt;/li&gt;
-&lt;li&gt;ProgressViewとErrorViewを別々に扱うので不安になる&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;って書きながら思った。&lt;/p&gt;
-
-&lt;h1&gt;もうちょっとスマートに表現&lt;/h1&gt;
-
-&lt;p&gt;全体を囲むViewGroupがステートを持ってた方がいいかなと思って以下のように実装。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="xml"&gt;&lt;!-- FrameLayoutの代わりにStateFrameLayout(作った)を使う --&gt;
-&amp;lt;rejasupotaro.sample.views.StateFrameLayout
-        android:id=&amp;quot;@+id/state_frame_layout&amp;quot;
-        android:background=&amp;quot;@android:color/holo_blue_light&amp;quot;
-        android:layout_width=&amp;quot;match_parent&amp;quot;
-        android:layout_height=&amp;quot;match_parent&amp;quot;
-        &amp;gt;
-    &amp;lt;LinearLayout
-            android:orientation=&amp;quot;vertical&amp;quot;
-            android:layout_gravity=&amp;quot;center&amp;quot;
-            android:layout_width=&amp;quot;wrap_content&amp;quot;
-            android:layout_height=&amp;quot;wrap_content&amp;quot;
-            &amp;gt;
-        &amp;lt;ImageView
-                android:src=&amp;quot;@drawable/droid&amp;quot;
-                android:layout_gravity=&amp;quot;center&amp;quot;
-                android:layout_width=&amp;quot;wrap_content&amp;quot;
-                android:layout_height=&amp;quot;wrap_content&amp;quot;
-                /&amp;gt;
-        &amp;lt;TextView
-                android:text=&amp;quot;content&amp;quot;
-                android:textSize=&amp;quot;@dimen/default_text_size&amp;quot;
-                android:textColor=&amp;quot;@color/default_text_color&amp;quot;
-                android:layout_gravity=&amp;quot;center&amp;quot;
-                android:layout_width=&amp;quot;wrap_content&amp;quot;
-                android:layout_height=&amp;quot;wrap_content&amp;quot;
-                /&amp;gt;
-    &amp;lt;/LinearLayout&amp;gt;
-&amp;lt;/rejasupotaro.sample.views.StateFrameLayout&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;続いてジャバ。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;@InjectView(R.id.state_frame_layout) private StateFrameLayout mStateFrameLayout;
-
-private void requestRssFeed() {
-    mStateFrameLayout.showProgress();
-
-    mRssFeedClient.request(new RssFeedClient.EpisodeClientResponseHandler() {
-        @Override public void onSuccess(List&amp;lt;Episode&amp;gt; episodeList) {
-            BusProvider.getInstance().post(new LoadEpisodeListCompleteEvent(episodeList));
-            mStateFrameLayout.showContent();
-        }
-
-        @Override public void onFailure() {
-            ToastUtils.show(getActivity(), &amp;quot;An error occurred while requesting rss feed.&amp;quot;);
-            mStateFrameLayout.showError();
-        }
-    });
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-&lt;li&gt;元のレイアウトに変更はほぼ必要ない&lt;/li&gt;
-&lt;li&gt;ステートの管理が少し楽になる&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3&gt;確認してみる&lt;/h3&gt;
-
-&lt;p&gt;とりあえず2秒ごとにステートを変更してみる。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;handler.postDelayed(new Runnable() {
-        @Override public void run() {
-            if (mStateFrameLayout.isStateProgress()) {
-                mStateFrameLayout.showError();
-            } else if (mStateFrameLayout.isStateError()) {
-                mStateFrameLayout.showContent();
-            } else {
-                mStateFrameLayout.showProgress();
-            }
-            handler.postDelayed(this, TASK_INTERVAL_MILLIS);
-        }
-}, TASK_INTERVAL_MILLIS);
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;img src="http://gifzo.net/BMfi6eoXjgf.gif" width="200"&gt;&lt;/p&gt;
-
-&lt;p&gt;ちゃんと動いてるっぽい。&lt;/p&gt;
-
-&lt;h1&gt;StateFrameLayout&lt;/h1&gt;
-
-&lt;p&gt;ContentViewがinflateされたタイミングでProgressViewとErrorViewを生成してセットし直してるだけです(なので動的にビューを追加しようとしたらちょっと変更が必要です)。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;public class StateFrameLayout extends FrameLayout {
-
-    private View mContentView;
-    private View mProgressView;
-    private View mErrorView;
-    private State mState = State.CONTENT;
-
-    public static enum State {
-        CONTENT,
-        PROGRESS,
-        ERORR;
-    }
-
-    public State getState() {
-        return mState;
-    }
-
-    public boolean isStateContent() {
-        return (mState == State.CONTENT);
-    }
-
-    public boolean isStateProgress() {
-        return (mState == State.PROGRESS);
-    }
-
-    public boolean isStateError() {
-        return (mState == State.ERORR);
-    }
-
-    public StateFrameLayout(Context context, AttributeSet attrs) {
-        super(context, attrs);
-    }
-
-    @Override public void onFinishInflate() {
-        setupView();
-    }
-
-    private void setupView() {
-        List&amp;lt;View&amp;gt; children = getAllChildren();
-        removeAllViews();
-
-        mContentView = inflateContentView(children);
-        mProgressView = View.inflate(getContext(), R.layout.progress_view, null);
-        mErrorView = View.inflate(getContext(), R.layout.error_view, null);
-
-        addView(mContentView);
-        addView(mProgressView);
-        addView(mErrorView);
-    }
-
-    private List&amp;lt;View&amp;gt; getAllChildren() {
-        List&amp;lt;View&amp;gt; children = new ArrayList&amp;lt;&amp;gt;();
-        int childCount = getChildCount();
-        for (int i = 0; i &amp;lt; childCount; i++) {
-            children.add(getChildAt(i));
-        }
-
-        return children;
-    }
-
-    private View inflateContentView(List&amp;lt;View&amp;gt; viewList) {
-        FrameLayout frameLayout = new FrameLayout(getContext());
-        for (View view : viewList) {
-            frameLayout.addView(view);
-        }
-        return frameLayout;
-    }
-
-    public void showProgress() {
-        mContentView.setVisibility(View.GONE);
-        mProgressView.setVisibility(View.VISIBLE);
-        mErrorView.setVisibility(View.GONE);
-
-        mState = State.PROGRESS;
-    }
-
-    public void showError() {
-        mContentView.setVisibility(View.GONE);
-        mProgressView.setVisibility(View.GONE);
-        mErrorView.setVisibility(View.VISIBLE);
-
-        mState = State.ERORR;
-    }
-
-    public void showContent() {
-        mContentView.setVisibility(View.VISIBLE);
-        mProgressView.setVisibility(View.GONE);
-        mErrorView.setVisibility(View.GONE);
-
-        mState = State.CONTENT;
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;ProgressViewとかErrorViewのレイアウトIDとか、エラー文言とかはXMLに書けると再利用性高まると思う。
-属性は &lt;code&gt;namespace + attribute&lt;/code&gt; で取れる。たとえば &lt;code&gt;android:text&lt;/code&gt; ならこんな感じで。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;// LayoutUtils.java とかにどうぞ
-private static final String NAME_SPACE_ANDROID = &amp;quot;http://schemas.android.com/apk/res/android&amp;quot;;
-
-public static final String getStringFromAttribute(Context context, AttributeSet attrs) {
-    if (context == null || attrs == null) return &amp;quot;&amp;quot;;
-
-    int textId = attrs.getAttributeResourceValue(NAME_SPACE_ANDROID, &amp;quot;text&amp;quot;, -1);
-    if (textId == -1) {
-        context.getString(textId)
-    } else {
-        return &amp;quot;&amp;quot;;
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;あとビューのデバッグするのにJakeWharton神の&lt;a href="https://github.com/JakeWharton/scalpel"&gt;Scalpel&lt;/a&gt;便利。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201401/scalpel.png" width="200"&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src="https://github.com/JakeWharton/scalpel/raw/master/images/sample.gif" width="200"&gt;&lt;/p&gt;
 </content>
   </entry>
 </feed>
