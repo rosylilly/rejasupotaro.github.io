@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="IE=edge;chrome=1" http-equiv="X-UA-Compatible" />
+    <title>Androidのiframeのイベントハンドリング - Rejasupoem</title><link rel="alternate" type="application/atom+xml" title="Atom Feed" href="/feed.xml" /><link href="/stylesheets/all.css?1392853746" media="all" rel="stylesheet" type="text/css" /><link href="/images/favicon.ico" rel="icon" type="image/ico" />
+  </head>
+  <body>
+    <link href="http://yandex.st/highlightjs/8.0/styles/solarized_light.min.css" rel="stylesheet" type="text/css" />
+    <script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+    <script type="text/javascript">
+      hljs.initHighlightingOnLoad();
+    </script>
+    <header class="header">
+      <div class="header-inner"><a href="/">
+        <div class="header-image">
+          <img width="100" height="100" class="header-image-element" src="/images/rejasupotaro.jpg?1392853746" />
+        </div>
+        <div class="header-text">
+          <h1 class="header-text-title">
+            Rejasupoem
+          </h1>
+          <p class="header-text-description">
+            deliver value to customers continuously or die;
+          </p>
+        </div></a>
+        
+      </div>
+    </header>
+    <hr />
+    <div class="main">
+      <div class="main-inner main-inner-single-article"><article class="main-article">
+  <div class="main-article-header">
+    <h1 class="main-article-header-title">
+      Androidのiframeのイベントハンドリング
+    </h1>
+    <div class="main-article-header-date">
+      2014-02-20
+    </div>
+  </div><h1>iframeの広告を配信する？</h1>
+
+<p>AndroidにAdMobでiframeの広告を配信したいという話があって、あれWebViewでiframeのイベントって拾えるんだっけ？っていう話になりました。
+パッと調べたところ、iOSのshouldStartLoadWithRequestはiframeのイベントでも呼ばれますが、AndroidのshouldOverrideUrlLoadingは呼ばれないらしいということが分かりました。</p>
+
+<p>まあ、広告自体はiframeを使うとレギュレーション違反で、最悪アカウントごと消される可能性があるってことでなくなったのですが、ちょっと別の事情もありiframeのイベントのハンドリングについて調べることになりました。</p>
+
+<h1>別の事情</h1>
+
+<p>個人的にRebuild.fm for Androidというアプリをオープンソースで開発しているのですが、Twitterの検索結果の表示を本来ならばネイティブ実装するところを横着して、WebView + Twitter Widgetにしたところ、画面遷移で真っ白になってしまい(表示できるページもある)、とりあえずリンクをタップしたら外部アプリに遷移させたかった。全部雪のせいだ。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/timeline1.png" alt=""></p>
+
+<h1>AndroidのWebViewのイベントのコールの順番</h1>
+
+<ol>
+<li>loadUrl (URLを指定して読み込みを開始する。)</li>
+<li>onPageStarted (ページの読み込み前に呼ばれる。)</li>
+<li>shouldOverrideUrlLoading (ページ遷移前に呼ばれる。)</li>
+<li>onReceivedError (エラーが発生したら呼ばれる。)</li>
+<li>onPageFinished (ページ読み込み完了時に呼ばれる。)</li>
+</ol>
+
+<p>iframe内でリンクをタップしたら…何も呼ばれないんですね。</p>
+
+<h1>iframeのイベントもハンドリングしたい</h1>
+
+<p><a href="http://developer.android.com/reference/android/webkit/WebViewClient.html">ドキュメント</a>を見てたらshouldInterceptRequest (リソースを取りにいく前に呼ばれる)と、onLoadResource (リソースを受け取ったときに呼ばれる)(その割にファイルではなくWebViewを引数に受け取るので何に使うのかよく分からない)というメソッドを見つけました。この2つはiframeの中の読み込みでも呼ばれます。
+shouldInterceptRequestはたとえばネットワークからリソースを取りにいく前にローカルに確認して、なければネットワークに取りにいく、ようなときに使います。
+onLoadResourceは、何に使うといいんでしょうね。(読み込みが完了したときの処理はふつうonPageFinishedに書く)</p>
+
+<h1>ログを仕込んで実行してみる</h1>
+
+<p>メソッド名: URL で出力してみます。</p>
+
+<h3>初回の読み込み</h3>
+
+<pre><code>shouldInterceptRequest: https://platform.twitter.com/widgets.js
+onPageStarted: https://twitter.com/
+onLoadResource: https://platform.twitter.com/widgets.js
+onPageFinished: https://twitter.com/
+shouldInterceptRequest: https://cdn.syndication.twimg.com/widgets/timelines/422550101425270784?domain=twitter.com&amp;lang=en&amp;t=1547578&amp;callback=twttr.tfw.callbacks.tl_422550101425270784_1&amp;suppress_response_codes=true
+onLoadResource: https://cdn.syndication.twimg.com/widgets/timelines/422550101425270784?domain=twitter.com&amp;lang=en&amp;t=1547578&amp;callback=twttr.tfw.callbacks.tl_422550101425270784_1&amp;suppress_response_codes=true
+shouldInterceptRequest: https://platform.twitter.com/embed/timeline.037a0cac0aa5abbe2c1b5c5cd368d398.2x.css
+onLoadResource: https://platform.twitter.com/embed/timeline.037a0cac0aa5abbe2c1b5c5cd368d398.2x.css
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/2530067911/334DF298-F2E9-4F40-AADE-26304BE4BAB3_normal
+onLoadResource: https://pbs.twimg.com/profile_images/2530067911/334DF298-F2E9-4F40-AADE-26304BE4BAB3_normal
+shouldInterceptRequest: https://abs.twimg.com/sticky/default_profile_images/default_profile_0_normal.png
+onLoadResource: https://abs.twimg.com/sticky/default_profile_images/default_profile_0_normal.png
+shouldInterceptRequest: https://abs.twimg.com/sticky/default_profile_images/default_profile_0_bigger.png
+onLoadResource: https://abs.twimg.com/sticky/default_profile_images/default_profile_0_bigger.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/435768971367702529/pklQQh0X_normal.png
+onLoadResource: https://pbs.twimg.com/profile_images/435768971367702529/pklQQh0X_normal.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/417177784599851009/dtMUDHR8_normal.jpeg
+onLoadResource: https://pbs.twimg.com/profile_images/417177784599851009/dtMUDHR8_normal.jpeg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1456750855/noplans_normal.png
+onLoadResource: https://pbs.twimg.com/profile_images/1456750855/noplans_normal.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/642855612/ico_kutar2_normal.png
+onLoadResource: https://pbs.twimg.com/profile_images/642855612/ico_kutar2_normal.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/378800000373060612/b7aa723e5a578d1bb140197c03572483_normal.jpeg
+onLoadResource: https://pbs.twimg.com/profile_images/378800000373060612/b7aa723e5a578d1bb140197c03572483_normal.jpeg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/595802461/67309_490331167_normal.jpg
+onLoadResource: https://pbs.twimg.com/profile_images/595802461/67309_490331167_normal.jpg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1478795301/icon_twitter_normal.jpg
+onLoadResource: https://pbs.twimg.com/profile_images/1478795301/icon_twitter_normal.jpg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/3743606898/2f4e43525ec3ccba4d70c8320bf1db5a_normal.png
+onLoadResource: https://pbs.twimg.com/profile_images/3743606898/2f4e43525ec3ccba4d70c8320bf1db5a_normal.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/3770844603/98341b299d5d310a45b1c58f216ef6dd_normal.jpeg
+onLoadResource: https://pbs.twimg.com/profile_images/3770844603/98341b299d5d310a45b1c58f216ef6dd_normal.jpeg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1840775966/b_normal.PNG
+onLoadResource: https://pbs.twimg.com/profile_images/1840775966/b_normal.PNG
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1300444117/hadaka2_normal.png
+onLoadResource: https://pbs.twimg.com/profile_images/1300444117/hadaka2_normal.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/2530067911/334DF298-F2E9-4F40-AADE-26304BE4BAB3_bigger
+onLoadResource: https://pbs.twimg.com/profile_images/2530067911/334DF298-F2E9-4F40-AADE-26304BE4BAB3_bigger
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/435768971367702529/pklQQh0X_bigger.png
+onLoadResource: https://pbs.twimg.com/profile_images/435768971367702529/pklQQh0X_bigger.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/417177784599851009/dtMUDHR8_bigger.jpeg
+onLoadResource: https://pbs.twimg.com/profile_images/417177784599851009/dtMUDHR8_bigger.jpeg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1456750855/noplans_bigger.png
+onLoadResource: https://pbs.twimg.com/profile_images/1456750855/noplans_bigger.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/642855612/ico_kutar2_bigger.png
+onLoadResource: https://pbs.twimg.com/profile_images/642855612/ico_kutar2_bigger.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/378800000373060612/b7aa723e5a578d1bb140197c03572483_bigger.jpeg
+onLoadResource: https://pbs.twimg.com/profile_images/378800000373060612/b7aa723e5a578d1bb140197c03572483_bigger.jpeg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/595802461/67309_490331167_bigger.jpg
+onLoadResource: https://pbs.twimg.com/profile_images/595802461/67309_490331167_bigger.jpg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1478795301/icon_twitter_bigger.jpg
+onLoadResource: https://pbs.twimg.com/profile_images/1478795301/icon_twitter_bigger.jpg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/3743606898/2f4e43525ec3ccba4d70c8320bf1db5a_bigger.png
+onLoadResource: https://pbs.twimg.com/profile_images/3743606898/2f4e43525ec3ccba4d70c8320bf1db5a_bigger.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/3770844603/98341b299d5d310a45b1c58f216ef6dd_bigger.jpeg
+onLoadResource: https://pbs.twimg.com/profile_images/3770844603/98341b299d5d310a45b1c58f216ef6dd_bigger.jpeg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1840775966/b_bigger.PNG
+onLoadResource: https://pbs.twimg.com/profile_images/1840775966/b_bigger.PNG
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1300444117/hadaka2_bigger.png
+onLoadResource: https://pbs.twimg.com/profile_images/1300444117/hadaka2_bigger.png
+shouldInterceptRequest: https://twitter.com/i/jot
+onLoadResource: https://twitter.com/i/jot
+shouldInterceptRequest: data:image/png;base64,iVBORw0K...
+onLoadResource: data:image/png;base64,iVBORw0KGg...
+</code></pre>
+
+<h3>はてなブログのリンクをタップ</h3>
+
+<pre><code>shouldInterceptRequest: https://twitter.com/i/jot?l=%7B%22_category_%22%3A%22tfw_client_event%22%2C%22widget_id%22%3A%22422550101425270784%22%2C%22widget_origin%22%3A%22https%3A%2F%2Ftwitter.com%2F%22%2C%22client_version%22%3A%221.0%22%2C%22query%22%3A%22rebuildfm%22%2C%22profile_id%22%3Anull%2C%22435950290265587712%22%3A%7B%22item_type%22%3A10%2C%22target_type%22%3A0%2C%22target_id%22%3A%22435950722274709504%22%7D%2C%22format_version%22%3A1%2C%22dnt%22%3Afalse%2C%22triggered_on%22%3A1392823831585%2C%22event_namespace%22%3A%7B%22client%22%3A%22tfw%22%2C%22element%22%3A%22url%22%2C%22component%22%3A%22tweet%22%2C%22section%22%3A%22stream%22%2C%22page%22%3A%22timeline%22%2C%22action%22%3A%22click%22%7D%7D
+onLoadResource: https://twitter.com/i/jot?l=%7B%22_category_%22%3A%22tfw_client_event%22%2C%22widget_id%22%3A%22422550101425270784%22%2C%22widget_origin%22%3A%22https%3A%2F%2Ftwitter.com%2F%22%2C%22client_version%22%3A%221.0%22%2C%22query%22%3A%22rebuildfm%22%2C%22profile_id%22%3Anull%2C%22435950290265587712%22%3A%7B%22item_type%22%3A10%2C%22target_type%22%3A0%2C%22target_id%22%3A%22435950722274709504%22%7D%2C%22format_version%22%3A1%2C%22dnt%22%3Afalse%2C%22triggered_on%22%3A1392823831585%2C%22event_namespace%22%3A%7B%22client%22%3A%22tfw%22%2C%22element%22%3A%22url%22%2C%22component%22%3A%22tweet%22%2C%22section%22%3A%22stream%22%2C%22page%22%3A%22timeline%22%2C%22action%22%3A%22click%22%7D%7D
+shouldInterceptRequest: http://t.co/HvfgJDxuBI
+onLoadResource: http://t.co/HvfgJDxuBI
+shouldInterceptRequest: http://gongo.hatenablog.com/entry/2014/02/18/232912
+onLoadResource: http://gongo.hatenablog.com/entry/2014/02/18/232912
+shouldInterceptRequest: https://syndication.twitter.com/widgets/timelines/paged/422550101425270784?domain=twitter.com&amp;lang=en&amp;since_id=436138958494265344&amp;callback=twttr.tfw.callbacks.tlPoll_422550101425270784_1_436138958494265344&amp;suppress_response_codes=true
+</code></pre>
+
+<h1>ハッシュタグをタップ</h1>
+
+<pre><code>shouldInterceptRequest: https://twitter.com/i/jot?l=%7B%22_category_%22%3A%22tfw_client_event%22%2C%22widget_id%22%3A%22422550101425270784%22%2C%22widget_origin%22%3A%22https%3A%2F%2Ftwitter.com%2F%22%2C%22client_version%22%3A%221.0%22%2C%22query%22%3A%22rebuildfm%22%2C%22profile_id%22%3Anull%2C%22436138432155234305%22%3A%7B%22item_type%22%3A10%2C%22target_type%22%3A0%2C%22target_id%22%3A%22436138958494265344%22%7D%2C%22format_version%22%3A1%2C%22dnt%22%3Afalse%2C%22triggered_on%22%3A1392823972162%2C%22event_namespace%22%3A%7B%22client%22%3A%22tfw%22%2C%22element%22%3A%22hashtag%22%2C%22component%22%3A%22tweet%22%2C%22section%22%3A%22stream%22%2C%22page%22%3A%22timeline%22%2C%22action%22%3A%22click%22%7D%7D
+onLoadResource: https://twitter.com/i/jot?l=%7B%22_category_%22%3A%22tfw_client_event%22%2C%22widget_id%22%3A%22422550101425270784%22%2C%22widget_origin%22%3A%22https%3A%2F%2Ftwitter.com%2F%22%2C%22client_version%22%3A%221.0%22%2C%22query%22%3A%22rebuildfm%22%2C%22profile_id%22%3Anull%2C%22436138432155234305%22%3A%7B%22item_type%22%3A10%2C%22target_type%22%3A0%2C%22target_id%22%3A%22436138958494265344%22%7D%2C%22format_version%22%3A1%2C%22dnt%22%3Afalse%2C%22triggered_on%22%3A1392823972162%2C%22event_namespace%22%3A%7B%22client%22%3A%22tfw%22%2C%22element%22%3A%22hashtag%22%2C%22component%22%3A%22tweet%22%2C%22section%22%3A%22stream%22%2C%22page%22%3A%22timeline%22%2C%22action%22%3A%22click%22%7D%7D
+shouldInterceptRequest: https://twitter.com/search?q=%23rebuildfm&amp;src=hash
+onLoadResource: https://twitter.com/search?q=%23rebuildfm&amp;src=hash
+shouldInterceptRequest: https://mobile.twitter.com/search
+onLoadResource: https://mobile.twitter.com/search
+</code></pre>
+
+<h1>iframeのイベントをどうハンドルするか</h1>
+
+<p><code>url.startWith(&quot;https://twitter.com/search&quot;)</code> とか、大雑把にURLを見てIntentを投げるようにしましたが、できることならiframeは使わない方がいいし、今回のケースだとネイティブで書いた方がいいです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/timeline2.png" alt=""></p>
+
+<h1>Links</h1>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/6778080/android-webview-shouldoverrideurlloading-for-iframes?rq=1">Android webView shouldOverrideUrlLoading for iframes</a></li>
+<li><a href="http://stackoverflow.com/questions/16447437/android-webview-shouldoverrideurlloading-not-called-when-user-clicks-links?rq=1">Android - webview - shouldOverrideUrlLoading not called - when user clicks links inside iframe</a></li>
+</ul>
+
+</article>
+<p>
+  <a class="twitter-share-button">"https://twitter.com/share" "Tweet"</a> 
+  <script type="text/javascript">
+    !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+  </script>
+</p>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-copyright">
+          Copyright &copy; 2013 by <a target="_blank" href="http://twitter.com/rejasupotaro">@rejasupotaro</a>
+        </p>
+        <p class="footer-powers">
+          Powered by <a href="https://github.com/r7kamura/r7kamura.github.io">Github</a> & <a href="https://github.com/r7kamura/sitespec">Sitespec</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

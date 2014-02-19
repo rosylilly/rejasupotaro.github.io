@@ -5,16 +5,163 @@
   <id>http://rejasupotaro.github.io/</id>
   <link href="http://rejasupotaro.github.io/"/>
   <link href="http://rejasupotaro.github.io/feed.xml" rel="self"/>
-  <updated>2014-02-18T00:00:00+09:00</updated>
+  <updated>2014-02-20T00:00:00+09:00</updated>
   <author>
     <name>rejasupotaro</name>
   </author>
+  <entry>
+    <title>Androidのiframeのイベントハンドリング</title>
+    <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/20/39.html"/>
+    <id>http://rejasupotaro.github.io/2014/02/20/39.html</id>
+    <published>2014-02-20T00:00:00+09:00</published>
+    <updated>2014-02-20T08:45:52+09:00</updated>
+    <author>
+      <name>rejasupotaro</name>
+    </author>
+    <content type="html">&lt;h1&gt;iframeの広告を配信する？&lt;/h1&gt;
+
+&lt;p&gt;AndroidにAdMobでiframeの広告を配信したいという話があって、あれWebViewでiframeのイベントって拾えるんだっけ？っていう話になりました。
+パッと調べたところ、iOSのshouldStartLoadWithRequestはiframeのイベントでも呼ばれますが、AndroidのshouldOverrideUrlLoadingは呼ばれないらしいということが分かりました。&lt;/p&gt;
+
+&lt;p&gt;まあ、広告自体はiframeを使うとレギュレーション違反で、最悪アカウントごと消される可能性があるってことでなくなったのですが、ちょっと別の事情もありiframeのイベントのハンドリングについて調べることになりました。&lt;/p&gt;
+
+&lt;h1&gt;別の事情&lt;/h1&gt;
+
+&lt;p&gt;個人的にRebuild.fm for Androidというアプリをオープンソースで開発しているのですが、Twitterの検索結果の表示を本来ならばネイティブ実装するところを横着して、WebView + Twitter Widgetにしたところ、画面遷移で真っ白になってしまい(表示できるページもある)、とりあえずリンクをタップしたら外部アプリに遷移させたかった。全部雪のせいだ。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/timeline1.png" alt=""&gt;&lt;/p&gt;
+
+&lt;h1&gt;AndroidのWebViewのイベントのコールの順番&lt;/h1&gt;
+
+&lt;ol&gt;
+&lt;li&gt;loadUrl (URLを指定して読み込みを開始する。)&lt;/li&gt;
+&lt;li&gt;onPageStarted (ページの読み込み前に呼ばれる。)&lt;/li&gt;
+&lt;li&gt;shouldOverrideUrlLoading (ページ遷移前に呼ばれる。)&lt;/li&gt;
+&lt;li&gt;onReceivedError (エラーが発生したら呼ばれる。)&lt;/li&gt;
+&lt;li&gt;onPageFinished (ページ読み込み完了時に呼ばれる。)&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;iframe内でリンクをタップしたら…何も呼ばれないんですね。&lt;/p&gt;
+
+&lt;h1&gt;iframeのイベントもハンドリングしたい&lt;/h1&gt;
+
+&lt;p&gt;&lt;a href="http://developer.android.com/reference/android/webkit/WebViewClient.html"&gt;ドキュメント&lt;/a&gt;を見てたらshouldInterceptRequest (リソースを取りにいく前に呼ばれる)と、onLoadResource (リソースを受け取ったときに呼ばれる)(その割にファイルではなくWebViewを引数に受け取るので何に使うのかよく分からない)というメソッドを見つけました。この2つはiframeの中の読み込みでも呼ばれます。
+shouldInterceptRequestはたとえばネットワークからリソースを取りにいく前にローカルに確認して、なければネットワークに取りにいく、ようなときに使います。
+onLoadResourceは、何に使うといいんでしょうね。(読み込みが完了したときの処理はふつうonPageFinishedに書く)&lt;/p&gt;
+
+&lt;h1&gt;ログを仕込んで実行してみる&lt;/h1&gt;
+
+&lt;p&gt;メソッド名: URL で出力してみます。&lt;/p&gt;
+
+&lt;h3&gt;初回の読み込み&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;shouldInterceptRequest: https://platform.twitter.com/widgets.js
+onPageStarted: https://twitter.com/
+onLoadResource: https://platform.twitter.com/widgets.js
+onPageFinished: https://twitter.com/
+shouldInterceptRequest: https://cdn.syndication.twimg.com/widgets/timelines/422550101425270784?domain=twitter.com&amp;amp;lang=en&amp;amp;t=1547578&amp;amp;callback=twttr.tfw.callbacks.tl_422550101425270784_1&amp;amp;suppress_response_codes=true
+onLoadResource: https://cdn.syndication.twimg.com/widgets/timelines/422550101425270784?domain=twitter.com&amp;amp;lang=en&amp;amp;t=1547578&amp;amp;callback=twttr.tfw.callbacks.tl_422550101425270784_1&amp;amp;suppress_response_codes=true
+shouldInterceptRequest: https://platform.twitter.com/embed/timeline.037a0cac0aa5abbe2c1b5c5cd368d398.2x.css
+onLoadResource: https://platform.twitter.com/embed/timeline.037a0cac0aa5abbe2c1b5c5cd368d398.2x.css
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/2530067911/334DF298-F2E9-4F40-AADE-26304BE4BAB3_normal
+onLoadResource: https://pbs.twimg.com/profile_images/2530067911/334DF298-F2E9-4F40-AADE-26304BE4BAB3_normal
+shouldInterceptRequest: https://abs.twimg.com/sticky/default_profile_images/default_profile_0_normal.png
+onLoadResource: https://abs.twimg.com/sticky/default_profile_images/default_profile_0_normal.png
+shouldInterceptRequest: https://abs.twimg.com/sticky/default_profile_images/default_profile_0_bigger.png
+onLoadResource: https://abs.twimg.com/sticky/default_profile_images/default_profile_0_bigger.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/435768971367702529/pklQQh0X_normal.png
+onLoadResource: https://pbs.twimg.com/profile_images/435768971367702529/pklQQh0X_normal.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/417177784599851009/dtMUDHR8_normal.jpeg
+onLoadResource: https://pbs.twimg.com/profile_images/417177784599851009/dtMUDHR8_normal.jpeg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1456750855/noplans_normal.png
+onLoadResource: https://pbs.twimg.com/profile_images/1456750855/noplans_normal.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/642855612/ico_kutar2_normal.png
+onLoadResource: https://pbs.twimg.com/profile_images/642855612/ico_kutar2_normal.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/378800000373060612/b7aa723e5a578d1bb140197c03572483_normal.jpeg
+onLoadResource: https://pbs.twimg.com/profile_images/378800000373060612/b7aa723e5a578d1bb140197c03572483_normal.jpeg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/595802461/67309_490331167_normal.jpg
+onLoadResource: https://pbs.twimg.com/profile_images/595802461/67309_490331167_normal.jpg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1478795301/icon_twitter_normal.jpg
+onLoadResource: https://pbs.twimg.com/profile_images/1478795301/icon_twitter_normal.jpg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/3743606898/2f4e43525ec3ccba4d70c8320bf1db5a_normal.png
+onLoadResource: https://pbs.twimg.com/profile_images/3743606898/2f4e43525ec3ccba4d70c8320bf1db5a_normal.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/3770844603/98341b299d5d310a45b1c58f216ef6dd_normal.jpeg
+onLoadResource: https://pbs.twimg.com/profile_images/3770844603/98341b299d5d310a45b1c58f216ef6dd_normal.jpeg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1840775966/b_normal.PNG
+onLoadResource: https://pbs.twimg.com/profile_images/1840775966/b_normal.PNG
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1300444117/hadaka2_normal.png
+onLoadResource: https://pbs.twimg.com/profile_images/1300444117/hadaka2_normal.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/2530067911/334DF298-F2E9-4F40-AADE-26304BE4BAB3_bigger
+onLoadResource: https://pbs.twimg.com/profile_images/2530067911/334DF298-F2E9-4F40-AADE-26304BE4BAB3_bigger
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/435768971367702529/pklQQh0X_bigger.png
+onLoadResource: https://pbs.twimg.com/profile_images/435768971367702529/pklQQh0X_bigger.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/417177784599851009/dtMUDHR8_bigger.jpeg
+onLoadResource: https://pbs.twimg.com/profile_images/417177784599851009/dtMUDHR8_bigger.jpeg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1456750855/noplans_bigger.png
+onLoadResource: https://pbs.twimg.com/profile_images/1456750855/noplans_bigger.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/642855612/ico_kutar2_bigger.png
+onLoadResource: https://pbs.twimg.com/profile_images/642855612/ico_kutar2_bigger.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/378800000373060612/b7aa723e5a578d1bb140197c03572483_bigger.jpeg
+onLoadResource: https://pbs.twimg.com/profile_images/378800000373060612/b7aa723e5a578d1bb140197c03572483_bigger.jpeg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/595802461/67309_490331167_bigger.jpg
+onLoadResource: https://pbs.twimg.com/profile_images/595802461/67309_490331167_bigger.jpg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1478795301/icon_twitter_bigger.jpg
+onLoadResource: https://pbs.twimg.com/profile_images/1478795301/icon_twitter_bigger.jpg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/3743606898/2f4e43525ec3ccba4d70c8320bf1db5a_bigger.png
+onLoadResource: https://pbs.twimg.com/profile_images/3743606898/2f4e43525ec3ccba4d70c8320bf1db5a_bigger.png
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/3770844603/98341b299d5d310a45b1c58f216ef6dd_bigger.jpeg
+onLoadResource: https://pbs.twimg.com/profile_images/3770844603/98341b299d5d310a45b1c58f216ef6dd_bigger.jpeg
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1840775966/b_bigger.PNG
+onLoadResource: https://pbs.twimg.com/profile_images/1840775966/b_bigger.PNG
+shouldInterceptRequest: https://pbs.twimg.com/profile_images/1300444117/hadaka2_bigger.png
+onLoadResource: https://pbs.twimg.com/profile_images/1300444117/hadaka2_bigger.png
+shouldInterceptRequest: https://twitter.com/i/jot
+onLoadResource: https://twitter.com/i/jot
+shouldInterceptRequest: data:image/png;base64,iVBORw0K...
+onLoadResource: data:image/png;base64,iVBORw0KGg...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;はてなブログのリンクをタップ&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;shouldInterceptRequest: https://twitter.com/i/jot?l=%7B%22_category_%22%3A%22tfw_client_event%22%2C%22widget_id%22%3A%22422550101425270784%22%2C%22widget_origin%22%3A%22https%3A%2F%2Ftwitter.com%2F%22%2C%22client_version%22%3A%221.0%22%2C%22query%22%3A%22rebuildfm%22%2C%22profile_id%22%3Anull%2C%22435950290265587712%22%3A%7B%22item_type%22%3A10%2C%22target_type%22%3A0%2C%22target_id%22%3A%22435950722274709504%22%7D%2C%22format_version%22%3A1%2C%22dnt%22%3Afalse%2C%22triggered_on%22%3A1392823831585%2C%22event_namespace%22%3A%7B%22client%22%3A%22tfw%22%2C%22element%22%3A%22url%22%2C%22component%22%3A%22tweet%22%2C%22section%22%3A%22stream%22%2C%22page%22%3A%22timeline%22%2C%22action%22%3A%22click%22%7D%7D
+onLoadResource: https://twitter.com/i/jot?l=%7B%22_category_%22%3A%22tfw_client_event%22%2C%22widget_id%22%3A%22422550101425270784%22%2C%22widget_origin%22%3A%22https%3A%2F%2Ftwitter.com%2F%22%2C%22client_version%22%3A%221.0%22%2C%22query%22%3A%22rebuildfm%22%2C%22profile_id%22%3Anull%2C%22435950290265587712%22%3A%7B%22item_type%22%3A10%2C%22target_type%22%3A0%2C%22target_id%22%3A%22435950722274709504%22%7D%2C%22format_version%22%3A1%2C%22dnt%22%3Afalse%2C%22triggered_on%22%3A1392823831585%2C%22event_namespace%22%3A%7B%22client%22%3A%22tfw%22%2C%22element%22%3A%22url%22%2C%22component%22%3A%22tweet%22%2C%22section%22%3A%22stream%22%2C%22page%22%3A%22timeline%22%2C%22action%22%3A%22click%22%7D%7D
+shouldInterceptRequest: http://t.co/HvfgJDxuBI
+onLoadResource: http://t.co/HvfgJDxuBI
+shouldInterceptRequest: http://gongo.hatenablog.com/entry/2014/02/18/232912
+onLoadResource: http://gongo.hatenablog.com/entry/2014/02/18/232912
+shouldInterceptRequest: https://syndication.twitter.com/widgets/timelines/paged/422550101425270784?domain=twitter.com&amp;amp;lang=en&amp;amp;since_id=436138958494265344&amp;amp;callback=twttr.tfw.callbacks.tlPoll_422550101425270784_1_436138958494265344&amp;amp;suppress_response_codes=true
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1&gt;ハッシュタグをタップ&lt;/h1&gt;
+
+&lt;pre&gt;&lt;code&gt;shouldInterceptRequest: https://twitter.com/i/jot?l=%7B%22_category_%22%3A%22tfw_client_event%22%2C%22widget_id%22%3A%22422550101425270784%22%2C%22widget_origin%22%3A%22https%3A%2F%2Ftwitter.com%2F%22%2C%22client_version%22%3A%221.0%22%2C%22query%22%3A%22rebuildfm%22%2C%22profile_id%22%3Anull%2C%22436138432155234305%22%3A%7B%22item_type%22%3A10%2C%22target_type%22%3A0%2C%22target_id%22%3A%22436138958494265344%22%7D%2C%22format_version%22%3A1%2C%22dnt%22%3Afalse%2C%22triggered_on%22%3A1392823972162%2C%22event_namespace%22%3A%7B%22client%22%3A%22tfw%22%2C%22element%22%3A%22hashtag%22%2C%22component%22%3A%22tweet%22%2C%22section%22%3A%22stream%22%2C%22page%22%3A%22timeline%22%2C%22action%22%3A%22click%22%7D%7D
+onLoadResource: https://twitter.com/i/jot?l=%7B%22_category_%22%3A%22tfw_client_event%22%2C%22widget_id%22%3A%22422550101425270784%22%2C%22widget_origin%22%3A%22https%3A%2F%2Ftwitter.com%2F%22%2C%22client_version%22%3A%221.0%22%2C%22query%22%3A%22rebuildfm%22%2C%22profile_id%22%3Anull%2C%22436138432155234305%22%3A%7B%22item_type%22%3A10%2C%22target_type%22%3A0%2C%22target_id%22%3A%22436138958494265344%22%7D%2C%22format_version%22%3A1%2C%22dnt%22%3Afalse%2C%22triggered_on%22%3A1392823972162%2C%22event_namespace%22%3A%7B%22client%22%3A%22tfw%22%2C%22element%22%3A%22hashtag%22%2C%22component%22%3A%22tweet%22%2C%22section%22%3A%22stream%22%2C%22page%22%3A%22timeline%22%2C%22action%22%3A%22click%22%7D%7D
+shouldInterceptRequest: https://twitter.com/search?q=%23rebuildfm&amp;amp;src=hash
+onLoadResource: https://twitter.com/search?q=%23rebuildfm&amp;amp;src=hash
+shouldInterceptRequest: https://mobile.twitter.com/search
+onLoadResource: https://mobile.twitter.com/search
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1&gt;iframeのイベントをどうハンドルするか&lt;/h1&gt;
+
+&lt;p&gt;&lt;code&gt;url.startWith(&amp;quot;https://twitter.com/search&amp;quot;)&lt;/code&gt; とか、大雑把にURLを見てIntentを投げるようにしましたが、できることならiframeは使わない方がいいし、今回のケースだとネイティブで書いた方がいいです。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/timeline2.png" alt=""&gt;&lt;/p&gt;
+
+&lt;h1&gt;Links&lt;/h1&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="http://stackoverflow.com/questions/6778080/android-webview-shouldoverrideurlloading-for-iframes?rq=1"&gt;Android webView shouldOverrideUrlLoading for iframes&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="http://stackoverflow.com/questions/16447437/android-webview-shouldoverrideurlloading-not-called-when-user-clicks-links?rq=1"&gt;Android - webview - shouldOverrideUrlLoading not called - when user clicks links inside iframe&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+  </entry>
   <entry>
     <title>Rebuild.fmクライアント(非公式)開発の裏話</title>
     <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/18/38.html"/>
     <id>http://rejasupotaro.github.io/2014/02/18/38.html</id>
     <published>2014-02-18T00:00:00+09:00</published>
-    <updated>2014-02-18T09:27:04+09:00</updated>
+    <updated>2014-02-20T08:49:00+09:00</updated>
     <author>
       <name>rejasupotaro</name>
     </author>
@@ -46,7 +193,7 @@ Androidアプリのバージョンコードは整数でなければなりませ�
 たとえばビルドした日付を入れている開発者もいますし、独自に定義したコードを使っている人もいます。
 僕の場合はオープンソースでやってるし、日付よりGitのログの方が有用かなと思って、このようにしました。&lt;/p&gt;
 
-&lt;p&gt;というか思い立って調べたら&lt;a href="https://plus.google.com/+JakeWharton/posts/6f5TcVPRZij"&gt;Jake Wharton神&lt;/a&gt;の記事が出てきたので、ほぼそのとおりに設定しました。
+&lt;p&gt;というか思い立って調べたら&lt;a href="https://plus.google.com/+JakeWharton/posts/6f5TcVPRZij"&gt;Jake Wharton神の記事&lt;/a&gt;が出てきたので、ほぼそのとおりに設定しました。
 以下、アプリのビルド設定の一部です。&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;def versionMajor = 0
@@ -827,614 +974,6 @@ IDEのデフォルト機能でViewHolder以外のコードを生成できるの�
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;でもViewHolderを手で書いたり、pluginで生成するのもあれなんですよね、 &lt;strong&gt;まさか来週の&lt;a href="https://github.com/potatotips/potatotips/wiki/potatotips-4"&gt;potatotips&lt;/a&gt;で@__gfx__さんがgradleでxmlからジャバコードを自動生成するわけじゃあるまいし(前フリ)&lt;/strong&gt;&lt;/p&gt;
-</content>
-  </entry>
-  <entry>
-    <title>第7章 型や型クラスを自分で作ろう 後編</title>
-    <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/02/33.html"/>
-    <id>http://rejasupotaro.github.io/2014/02/02/33.html</id>
-    <published>2014-02-02T00:00:00+09:00</published>
-    <updated>2014-02-12T14:14:50+09:00</updated>
-    <author>
-      <name>rejasupotaro</name>
-    </author>
-    <content type="html">&lt;h1&gt;前回やったこと&lt;/h1&gt;
-
-&lt;ul&gt;
-&lt;li&gt;データ型の定義&lt;/li&gt;
-&lt;li&gt;データ型のエクスポート&lt;/li&gt;
-&lt;li&gt;レコード構文&lt;/li&gt;
-&lt;li&gt;多相型と型引数&lt;/li&gt;
-&lt;li&gt;インスタンスの自動導出&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;blockquote class="twitter-tweet" lang="en"&gt;&lt;a href="{% oembed https://twitter.com/knjname/status/427053066030833664 %}"&gt;&lt;/a&gt;&lt;/blockquote&gt;&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;
-&lt;blockquote class="twitter-tweet" lang="en"&gt;&lt;a href="{% oembed https://twitter.com/nobkz/status/428789457068646401 %}"&gt;&lt;/a&gt;&lt;/blockquote&gt;&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;
-&lt;blockquote class="twitter-tweet" lang="en"&gt;&lt;a href="{% oembed https://twitter.com/nida_001/status/428789602015387648 %}"&gt;&lt;/a&gt;&lt;/blockquote&gt;&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;
-&lt;blockquote class="twitter-tweet" lang="en"&gt;&lt;a href="{% oembed https://twitter.com/tail_y/status/428822946719604736 %}"&gt;&lt;/a&gt;&lt;/blockquote&gt;&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;
-&lt;blockquote class="twitter-tweet" lang="en"&gt;&lt;a href="{% oembed https://twitter.com/VoQn/status/429091683783806976 %}"&gt;&lt;/a&gt;&lt;/blockquote&gt;&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;&lt;/p&gt;
-
-&lt;h1&gt;今回やること&lt;/h1&gt;
-
-&lt;ul&gt;
-&lt;li&gt;型シノニム
-
-&lt;ul&gt;
-&lt;li&gt;型シノニムの多相化&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;再帰的なデータ構造&lt;/li&gt;
-&lt;li&gt;演算子の定義&lt;/li&gt;
-&lt;li&gt;型クラス
-
-&lt;ul&gt;
-&lt;li&gt;型クラスの定義&lt;/li&gt;
-&lt;li&gt;型クラスのサブクラス&lt;/li&gt;
-&lt;li&gt;型クラス制約&lt;/li&gt;
-&lt;li&gt;多相性&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;Functor型クラス&lt;/li&gt;
-&lt;li&gt;型の種類&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1&gt;型と新しい型(type and newtype)&lt;/h1&gt;
-
-&lt;h2&gt;type&lt;/h2&gt;
-
-&lt;p&gt;何章か前に出てきましたが &lt;code&gt;[Char]&lt;/code&gt; と &lt;code&gt;String&lt;/code&gt; は同値で、交換可能です。
-ghciで &lt;code&gt;:i String&lt;/code&gt; としてみてください。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :i String
-type String = [Char]    -- Defined in `GHC.Base&amp;#39;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;type 型構築子 型引数1 型引数2 ... = 元の型
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-&lt;p&gt;typeは型のシノニムが定義されているのであって、新しい型が作られている訳ではありません。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;ちょっと復習ですが、名前、年齢、身長、体重、電話番号を持つUserを表すデータ型は、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data User = User String Int Float Float String
-    deriving (Show)
-
-name :: User -&gt; String
-name (User name _ _ _ _ ) = name
-
-age :: User -&gt; Int
-age (User _ age _ _ _) = age
-
-height :: User -&gt; Float
-height (User _ _ height _ _) = height
-
-weight :: User -&gt; Float
-weight (User _ _ _ weight _) = weight
-
-phoneNumber :: User -&gt; String
-phoneNumber (User _ _ _ _ phoneNumber) = phoneNumber
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;このようになって、値構築子(値コンストラクタ)は関数なので &lt;code&gt;:type&lt;/code&gt; で型シグネチャを見ることができます。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :t User
-User :: String -&gt; Int -&gt; Float -&gt; Float -&gt; String -&gt; User
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;型シグネチャだけ見ても何を渡せばいいのか分からないということで、レコード構文もやりました。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data User = User { name :: String
-                 , age :: Int
-                 , height :: Float
-                 , weight :: Float
-                 , phoneNumber :: String } deriving (Show)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :t User
-User :: String -&gt; Int -&gt; Float -&gt; Float -&gt; String -&gt; User
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;typeを使うと下のように表すことができます。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;type Name = String
-type Age = Int
-type Height = Float
-type Weight = Float
-type PhoneNumber = String
-
-data User = User Name Age Height Weight PhoneNumber
-    deriving (Show)
-
-name :: User -&gt; Name
-name (User name _ _ _ _ ) = name
-
-age :: User -&gt; Age
-age (User _ age _ _ _) = age
-
-height :: User -&gt; Height
-height (User _ _ height _ _) = height
-
-weight :: User -&gt; Weight
-weight (User _ _ _ weight _) = weight
-
-phoneNumber :: User -&gt; PhoneNumber
-phoneNumber (User _ _ _ _ phoneNumber) = phoneNumber
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :t User
-User :: Name -&gt; Age -&gt; Height -&gt; Weight -&gt; PhoneNumber -&gt; User
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Haskellにはtypeの他にnewtypeもある。&lt;/p&gt;
-
-&lt;h3&gt;newtype&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;newtype 型構築子 型引数1 型引数2 ... = 値構築子 フィールド
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;次のプログラムは &amp;quot;0123&amp;quot; のような数字列を表す型DigitStringを定義したものです。
-関数atoiは、数字列を整数に変換する関数です。
-引数が数字列であるべきことを強調するために、String型ではなくDigitString型の値を引数に要求します。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;newtype DigitString = DigitString String
-
-atoi :: DigitString -&gt; Int
-atoi (DigitString xs) = read xs
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; let n = DigitString &amp;quot;99&amp;quot;
-&amp;gt; atoi n
-99
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;typeは、既存の型に別名を付けるもので、newtypeは、値構築子数1、フィールド数1の型専用のdata宣言とでも言うべきもので、既存の型をラップした型を与えます。&lt;/p&gt;
-
-&lt;h2&gt;data and type and newtype&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://hnakamur.blogspot.jp/2011/07/haskelldatatypenewtype.html"&gt;Haskellのdataとtypeとnewtypeの違い&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://stackoverflow.com/questions/5889696/difference-between-data-and-newtype-in-haskell"&gt;Difference between &lt;code&gt;data&lt;/code&gt; and &lt;code&gt;newtype&lt;/code&gt; in Haskell&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://stackoverflow.com/questions/18204308/haskell-type-vs-data-constructor"&gt;Haskell Type vs Data Constructor&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1&gt;型シノニムの多相化&lt;/h1&gt;
-
-&lt;p&gt;前回のおさらい&lt;/p&gt;
-
-&lt;blockquote&gt;
-&lt;p&gt;型コンストラクタは型引数を取ることができます。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :i Maybe
-data Maybe a = Nothing | Just a
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-&lt;p&gt;値コンストラクタが引数を取って新しい値を生み出すものでしたが、同じように型コンストラクタは型引数を取って新しい型を作るものです。
-MaybeにIntを渡すとMaybe Int型が得られますし、MaybeにStringを渡せばMaybe String型が得られます。
-こうすることで、&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data IntMaybe = INothing | IJust Int
-data StringMaybe = SNothing | SJust String
-data ShapeMaybe = ShNothing | ShJust Shape
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;blockquote&gt;
-&lt;p&gt;のように、中身の型ごとに別々の型にする必要がなくなります。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;という感じで、型シノニムも多相化することができます。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;type AssocList k v = [(k, v)]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;こうすることで、連想リストからキーを検索してくれる関数の型を &lt;code&gt;(Eq k) =&amp;gt; k -&gt; AssocList k v -&gt; Maybe v&lt;/code&gt; と書けるようになります。&lt;/p&gt;
-
-&lt;h1&gt;haskell-jobqueue&lt;/h1&gt;
-
-&lt;p&gt;&lt;blockquote class="twitter-tweet" lang="en"&gt;&lt;a href="{% oembed https://twitter.com/gree_tech/status/426666332973580288 %}"&gt;&lt;/a&gt;&lt;/blockquote&gt;&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;-- haskell-jobqueue/src/Network/JobQueue/Types.hs
-data Next a = Next {
-    nextJob :: (Maybe a)
-  , nextForks :: [(a, Maybe UTCTime)]
-  }
-
-type JobResult a = Either Failure (Next a)
-
-setNextJob :: (Unit a) =&amp;gt; a -&gt; (JobResult a) -&gt; (JobResult a)
-setNextJob x (Right next@(Next _ju _xs)) = Right next { nextJob = Just x }
-setNextJob _ jr@(Left _) = jr
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;ジョブとJobResultを引数にして、JobResultのRightだったら次のジョブをセットしたJobResultを返して、LeftだったらそのままJobResultを返す。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;-- haskell-jobqueue/src/Network/JobQueue/JobQueue.hs
-type FailureHandleFn a = Alert -&gt; String -&gt; String -&gt; Maybe (Job a) -&gt; IO (Maybe (Job a))
-type AfterExecuteHandleFn a = Job a -&gt; IO ()
-
-data (Unit a) =&amp;gt; Settings a = Settings {
-    failureHandleFn :: FailureHandleFn a
-  , afterExecuteFn :: AfterExecuteHandleFn a
-  }
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;長い型をtypeで表したりとかもする。&lt;/p&gt;
-
-&lt;h1&gt;再帰的なデータ構造&lt;/h1&gt;
-
-&lt;p&gt;時間があったら。&lt;/p&gt;
-
-&lt;h1&gt;演算子の定義&lt;/h1&gt;
-
-&lt;p&gt;すごいH本138ページあたりの演算子を定義する話。&lt;/p&gt;
-
-&lt;p&gt;まず、演算子を定義する。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;infixr 5 :-:
-data List a = Empty | a :-: (List a ) deriving (Show, Read, Eq, Ord)
-
-infixr 5 ^++
-(^++) :: List a -&gt; List a -&gt; List a
-Empty ^++ ys ys
-(x :-: xs) ^++ ys = x :-: (xs ^++ ys)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;そして使う。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; let a = 3 :-: 4 :-: 5 :-: Empty
-&amp;gt; let b = 6 :-: 7 :-: Empty
-&amp;gt; a ^++ b
-3 :-: (4 :-: (5 :-: (6 :-: (7 :-: Empty))))
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;img src="http://img.tiqav.com/8q.th.jpg" alt=""&gt;&lt;/p&gt;
-
-&lt;p&gt;これを見てもあまり嬉しいと感じられないと思うので、自分で便利そうな演算子を何か一個、作ってみましょう。&lt;/p&gt;
-
-&lt;h3&gt;例. 三項演算子っぽい何か&lt;/h3&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; [x &amp;gt; 5 ? 1 : 2 | x &amp;lt;- [1..10]]
-&amp;gt; [2,2,2,2,2,1,1,1,1,1]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;(これは実現できないので、これっぽいなにかを)&lt;/p&gt;
-
-&lt;p&gt;&lt;a href="http://d.hatena.ne.jp/marony0607/20111205/1323103005"&gt;Haskellの演算子について纏めてみた&lt;/a&gt;&lt;/p&gt;
-
-&lt;h1&gt;型クラス&lt;/h1&gt;
-
-&lt;p&gt;型クラスはインターフェイスのようなものです。型クラスは、特定の振る舞い(等値性判定だとか、順序の比較だとか、列挙だとか)を定義します。
-定義されたとおりに振る舞うことができる型は、その型クラスのインスタンスである、といいます。&lt;/p&gt;
-
-&lt;h2&gt;型クラスの定義&lt;/h2&gt;
-
-&lt;p&gt;Eq型クラスを例に取りましょう。
-Eqは等値性判定ができる(&lt;code&gt;==&lt;/code&gt; や &lt;code&gt;/=&lt;/code&gt;) という関数を定義している)値の型クラスです。
-これは標準ライブラリにおけるEqの定義です。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;class Eq a where
-  (==) :: a -&gt; a -&gt; Bool
-  (/=) :: a -&gt; a -&gt; Bool
-  x == y = not (x /= y)
-  x /= y = not (x == y)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;クラスには関数定義と、オプションでデフォルト実装を書くことができます。&lt;/p&gt;
-
-&lt;h2&gt;型クラスのサブクラスの定義&lt;/h2&gt;
-
-&lt;p&gt;別の型クラスのサブクラスである型クラスを作ることもできます。
-たとえばNumの型クラス宣言の最初のところは以下のようになっています。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;class (Eq a) =&amp;gt; Num a where
-  ...
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;aはEqの振る舞いを実装している必要もある、というふうになります。&lt;/p&gt;
-
-&lt;h2&gt;型クラス制約&lt;/h2&gt;
-
-&lt;p&gt;リストの要素の和を求める関数sumの型がもし、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;sum :: [Int] -&gt; Int
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;では具体的すぎます。かといって、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;sum :: [a] -&gt; a
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;では広すぎです。そこで、次のような制約付きの宣言が使われます。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;sum :: Num a =&amp;gt; [a] -&gt; a
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;sumの型シグネチャ宣言におけるNum aは、型aがNumクラスのインスタンスでなければならないという制約を表します。
-この制約は、型クラス制約、あるいは文脈(Context)と呼ばれます。&lt;/p&gt;
-
-&lt;h2&gt;インスタンス化&lt;/h2&gt;
-
-&lt;p&gt;ここで先週作った曜日のデータ型をみてみましょう。&lt;/p&gt;
-
-&lt;blockquote&gt;
-&lt;p&gt;使える自動導出を全部使って、曜日のデータ型を作ってみましょう。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data Day = Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday deriving (Eq, Ord, Show, Read, Bounded, Enum)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Eq、Ord、Show、Read、Bounded、Enumを自動導出していましたが、いくつかを手動で導出してみましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;data Day = Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday
-
-instance Eq Day where
-  Monday == Monday = True
-  Tuesday == Tuesday = True
-  Wednesday == Wednesday = True
-  Thursday == Thursday = True
-  Friday == Friday = True
-  Saturday == Saturday = True
-  Sunday == Sunday = True
-  _ == _ = False
-
-instance Show Day where
-  show Monday = &amp;quot;Monday&amp;quot;
-  show Tuesday = &amp;quot;Tuesday&amp;quot;
-  show Wednesday = &amp;quot;Wednesday&amp;quot;
-  show Thursday = &amp;quot;Thursday&amp;quot;
-  show Friday = &amp;quot;Friday&amp;quot;
-  show Saturday = &amp;quot;Saturday&amp;quot;
-  show Sunday = &amp;quot;Sunday&amp;quot;
-
-instance Ord Day where
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; Monday == Sunday
-False
-&amp;gt; Monday /= Sunday
-True
-&amp;gt; Friday
-Friday
-&amp;gt; Monday &amp;lt; Tuesday
-...
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;では、まず引数をStringにして返すputs関数を作って、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;puts :: (Show a) =&amp;gt; a -&gt; String
-puts a = show a
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; puts &amp;#39;a&amp;#39;
-&amp;quot;&amp;#39;a&amp;#39;&amp;quot;
-&amp;gt; puts 1
-&amp;quot;1&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;それから、IntかCharしか受け取れないように型クラス制約を付けてみましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; puts &amp;#39;a&amp;#39;
-&amp;quot;&amp;#39;a&amp;#39;&amp;quot;
-&amp;gt; puts (1 :: Int)
-&amp;quot;1&amp;quot;
-&amp;gt; puts (1 :: Float)
-
-&amp;lt;interactive&amp;gt;:14:1:
-    No instance for (IntOrChar Float)
-      arising from a use of `puts&amp;#39;
-    Possible fix: add an instance declaration for (IntOrChar Float)
-    In the expression: puts (1 :: Float)
-    In an equation for `it&amp;#39;: it = puts (1 :: Float)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2&gt;多相性&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://yingtai.hatenablog.com/entry/2012/08/17/215648"&gt;Polymorphismまとめ&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3&gt;パラメータ多相(parametric)&lt;/h3&gt;
-
-&lt;p&gt;Haskellのリストを例に取ると、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;length :: [a] -&gt; Int
-length [] = 0
-length (x:xs) = 1 + length xs
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code&gt;&amp;gt; length [1,2,3]   -- [Int] -&gt; Int
-3
-&amp;gt; length &amp;quot;foobar&amp;quot;  -- [Char] -&gt; Int
-6
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;この関数のアルゴリズムはリストの中身の型に依存しません。
-言い換えれば、length関数は型に関わらず同じ操作をしています。
-このようなタイプの多相をパラメータ多相と呼びます。&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;C++のテンプレート&lt;/li&gt;
-&lt;li&gt;Javaのジェネリクス&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3&gt;アドホック多相(ad-hoc)&lt;/h3&gt;
-
-&lt;p&gt;Haskellでは型クラスにもとづき、型によって振る舞いを変えることをアドホック多相といいます。&lt;/p&gt;
-
-&lt;p&gt;一般的にはアドホック多相にはオーバーロードと型キャストの二つがあります。&lt;/p&gt;
-
-&lt;h4&gt;オーバーロード&lt;/h4&gt;
-
-&lt;p&gt;Cを例に取ると、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="c"&gt;n = 1 + 3;        // 整数の加算
-r = 1.5 + 2.5;    // 実数の加算
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;ここでの &lt;code&gt;+&lt;/code&gt; 演算子の振る舞いは多相的ですが、実際の加算アルゴリズムは異なります。
-この意味で、この2つの演算子が同じ &lt;code&gt;+&lt;/code&gt; であることの必然性はあまりなく、便宜上そうなっているだけ(ad-hoc)にすぎません。&lt;/p&gt;
-
-&lt;h4&gt;型キャスト&lt;/h4&gt;
-
-&lt;pre&gt;&lt;code class="c"&gt;x = 1.5 + 10;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;このとき &lt;code&gt;+&lt;/code&gt; の左側は実数型、右側は整数型です。
-このとき &lt;code&gt;+&lt;/code&gt; 演算子は見かけの上でだけ多相的です。&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;C++/Javaのメソッドのオーバーロード&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3&gt;部分型多相(inclusion, subtyping)&lt;/h3&gt;
-
-&lt;p&gt;&lt;code&gt;Dog, Cat ∈ Animal&lt;/code&gt; という型の関係があったとき、
-Animal型のオブジェクトにsayメソッドが適用できるならば、
-Dog型、Cat型のオブジェクトにもsayメソッドが適用できる、といった多相です。&lt;/p&gt;
-
-&lt;p&gt;オブジェクト指向で主に「多態」と呼ばれるタイプの多相。&lt;/p&gt;
-
-&lt;h3&gt;ピンと来ない？&lt;/h3&gt;
-
-&lt;p&gt;アドホック多相は、関数を適用する型を制限するのに対して、パラメータ多相は、具体的な型について言及しないことにより、新しい型に対応できるようにするということらしいです。&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://www.nslabs.jp/haskell-poly.rhtml"&gt;Haskellでの多態 (多相)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://chopl.in/blog/2012/11/06/introduction-to-typeclass-with-scala.html"&gt;Scalaで型クラス入門&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1&gt;Functor型クラス&lt;/h1&gt;
-
-&lt;p&gt;Functor(関手)は、全体を写せる（map over）ものの型クラスです。
-map overと聞いて、リストのmapを思い出しませんか？
-あれも何かを写す操作の典型例です。&lt;/p&gt;
-
-&lt;p&gt;Functor型クラスの実装を覗いてみましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;class Functor f where
-    fmap :: (a -&gt; b) -&gt; f a -&gt; f b
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;見てのとおりFunctorは1つの関数 fmap を持っており、デフォルト実装は提供しておりません。
-どうやらfmapは、「ある型aから別の型bへの関数」と、「ある型aに適用されたファンクター値」を取り、「別の型bの方に適用されたファンクター値」を返す関数のようです。&lt;/p&gt;
-
-&lt;p&gt;ところで、fmapの型宣言は何かに似ていると思いませんか？&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :t fmap
-fmap :: Functor f =&amp;gt; (a -&gt; b) -&gt; f a -&gt; f b
-&amp;gt; :t map
-map :: (a -&gt; b) -&gt; [a] -&gt; [b]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;mapは、「ある型から別の型への関数」と、「ある型のリスト」を取り、「別の型のリスト」を返す関数のようです。&lt;/p&gt;
-
-&lt;p&gt;実は、リストはFunctor型クラスのインスタンスで、mapというのはリスト限定で動作するfmapなのです。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :i []
-data [] a = [] | a : [a]        -- Defined in `GHC.Types&amp;#39;
-instance Functor [] -- Defined in `GHC.Base&amp;#39;
-...
-
-instance Functor [] where
-    fmap = map
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/949822/qiita.com/131125-functors-applicative-and-monads-in-picture/fmap_list.png" alt=""&gt;&lt;/p&gt;
-
-&lt;p&gt;リストにとってのfmapはただのmapであるため、2つの関数をリストに使った結果は一致します。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; fmap (*2) [1..3]
-[2,4,6]
-&amp;gt; map (*2) [1..3]
-[2,4,6]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Functorになれるのは、箱のような働きをする型です。
-リスト以外にも例えばMaybe aがFunctorです。
-MaybeはこんなふうにFunctorになっています。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :i Maybe
-data Maybe a = Nothing | Just a         -- Defined instance Functor Maybe -- Defined in `Data.Maybe&amp;#39;
-...
-
-instance Functor Maybe where
-  fmap f (Just x) = Just (f x)
-  fmap f Nothing = Nothing
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;fmapの実装はいたってシンプルです。
-もし2つ目の引数が値の入ったJustだったら関数をJustの中身に適用して、Nothingだったら、Nothingを返します。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src="http://yogsototh.github.io/Category-Theory-Presentation/categories/img/mp/boxfunctor.png" width="400"&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; fmap (++ &amp;quot; HEY GUYS IM INSIDE THE JUST&amp;quot;) (Just &amp;quot;Something serious.&amp;quot;)
-Just &amp;quot;Something serious. HEY GUYS IM INSIDE THE JUST&amp;quot;
-&amp;gt; fmap (++ &amp;quot; HEY GUYS IM INSIDE THE JUST&amp;quot;) Nothing
-Nothing
-&amp;gt; fmap (*2) (Just 200)
-Just 400
-&amp;gt; fmap (*2) Nothing
-Nothing
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://qiita.com/suin/items/0255f0637921dcdfe83b"&gt;箱で考えるFunctor、ApplicativeそしてMonad&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://ja.wikibooks.org/wiki/Haskell/%E5%9C%8F%E8%AB%96"&gt;Haskell/圏論&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://d.hatena.ne.jp/enakai00/20130912/1378970253"&gt;Functorを例として、圏論とHaskellの関係を分かりやすく説明してみるテスト&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1&gt;型の種類&lt;/h1&gt;
-
-&lt;p&gt;&lt;code&gt;[a]&lt;/code&gt; や &lt;code&gt;Maybe a&lt;/code&gt; のような型コンストラクタは、他の型を引数に取って具体型になります。
-この振る舞いは、関数が値を引数に取って値を生み出すのとよく似ています。
-それに、関数と同じく型コンストラクタも部分適用できます。
-ここでは、型が型コンストラクタに適用される様子を形式的に定義してみます。&lt;/p&gt;
-
-&lt;p&gt;3、&amp;quot;YEAH!&amp;quot;、takeWhileといった値（関数も受け取ったり渡したりできる値です）は、それぞれ固有の値を持っています。
-型とは、値について何らかの推測をするための小さなラベルです。
-そして型にも小さなラベルがついています。
-その名は種類（kind）。種類は、「型の型」のようなものです。&lt;/p&gt;
-
-&lt;p&gt;ghciの &lt;code&gt;:kind&lt;/code&gt; コマンドを使って、型の種類をみてみましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :k Int
-Int :: *
-&amp;gt; :k []
-[] :: * -&gt; *
-&amp;gt; :k Maybe
-Maybe :: * -&gt; *
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;code&gt;*&lt;/code&gt; (スター)は、具体型を表す記号です。
-&lt;code&gt;[]&lt;/code&gt; や &lt;code&gt;Maybe&lt;/code&gt; は1つの具体型(例えばInt)を取って具体型(例えばMaybe Int)を返す型コンストラクタであることが分かります。&lt;/p&gt;
-
-&lt;p&gt;型コンストラクタに型引数を与えて、どんな種類の型ができるか調べてみましょう。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;&amp;gt; :k [Char]
-[Char] :: *
-&amp;gt; :k Maybe Int
-Maybe Int :: *
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;型引数を与えると、具体型になりました。
-型は値のラベルであり、種類は型のラベルである、という対応関係があるわけです。&lt;/p&gt;
-
-&lt;p&gt;改めてFunctorの定義を見直すと、型変数fは1つの具体型を取って具体型を生み出す型として使われていることが見て取れます。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="haskell"&gt;class Functor f where
-    fmap :: (a -&gt; b) -&gt; f a -&gt; f b
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;関数の型宣言で値の型として使われていることから &lt;code&gt;f a&lt;/code&gt; や &lt;code&gt;f b&lt;/code&gt; は具体型でなければならないことが分かります。
-Functorになるには &lt;code&gt;* -&gt; *&lt;/code&gt; という種類を持つ必要があるということが分かります。&lt;/p&gt;
-
-&lt;h1&gt;今後のスケジュール&lt;/h1&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://sugoihaskell.github.io/"&gt;sugoihaskell.github.io&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
 </content>
   </entry>
 </feed>
