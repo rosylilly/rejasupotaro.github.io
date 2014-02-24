@@ -14,7 +14,7 @@
     <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/22/40.html"/>
     <id>http://rejasupotaro.github.io/2014/02/22/40.html</id>
     <published>2014-02-22T00:00:00+09:00</published>
-    <updated>2014-02-24T13:17:03+09:00</updated>
+    <updated>2014-02-24T14:17:25+09:00</updated>
     <author>
       <name>rejasupotaro</name>
     </author>
@@ -35,6 +35,8 @@
 
 &lt;pre&gt;&lt;code class="groovy"&gt;apply from: &amp;#39;https://raw2.github.com/rejasupotaro/gradle-android-sdk-manager/master/sdk_manager.gradle&amp;#39;
 &lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;※リポジトリの参照先を変えました！&lt;a href="https://github.com/cookpad/gradle-android-sdk-manager"&gt;こちら&lt;/a&gt;を参照するようにしてください！&lt;/strong&gt;&lt;/p&gt;
 
 &lt;p&gt;一行メソッドを追加するだけです。&lt;/p&gt;
 
