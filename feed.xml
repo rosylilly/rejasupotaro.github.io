@@ -5,10 +5,62 @@
   <id>http://rejasupotaro.github.io/</id>
   <link href="http://rejasupotaro.github.io/"/>
   <link href="http://rejasupotaro.github.io/feed.xml" rel="self"/>
-  <updated>2014-02-20T00:00:00+09:00</updated>
+  <updated>2014-02-22T00:00:00+09:00</updated>
   <author>
     <name>rejasupotaro</name>
   </author>
+  <entry>
+    <title>自動でAndroid SDKをセットアップする</title>
+    <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/22/40.html"/>
+    <id>http://rejasupotaro.github.io/2014/02/22/40.html</id>
+    <published>2014-02-22T00:00:00+09:00</published>
+    <updated>2014-02-24T13:17:03+09:00</updated>
+    <author>
+      <name>rejasupotaro</name>
+    </author>
+    <content type="html">&lt;p&gt;新しくプロジェクトを触るとき、とりあえずimportしてビルドでエラー出てあーそのバージョン入ってなかったな入れるかみたいなことをすることあるけど、&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class="groovy"&gt;android {
+    compileSdkVersion 18
+    buildToolsVersion &amp;quot;19.0.1&amp;quot;
+
+    ...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;こうやってビルドファイルにはプロジェクトが必要としているSDKとかビルドツールは書いてるので、この設定をみてインストールしてなかったら自動で入れてくれたら便利そうと思って作りました。&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="https://github.com/rejasupotaro/sdk_manager"&gt;rejasupotaro / sdk_manager&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;使い方は、どこかでapplyして、&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class="groovy"&gt;apply from: &amp;#39;https://raw2.github.com/rejasupotaro/gradle-android-sdk-manager/master/sdk_manager.gradle&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;一行メソッドを追加するだけです。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class="groovy"&gt;android {
+    compileSdkVersion 18
+    buildToolsVersion &amp;quot;19.0.1&amp;quot;
+
+    installRequiredSdk(android)
+
+    ...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;並列でインストールするので普通より早いです。&lt;/p&gt;
+
+&lt;p&gt;Androidのツール書くときRubyとかGoとかHaskellとかも考えるけど、もちろんビルドファイルがGroovyだからってのもあるけど、相性抜きにしても表現力が高くて並列処理とかもめちゃめちゃ簡単に書けて、JVM最高みたいになってる。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class="groovy"&gt;-buildComponents(sdkDir, compileSdkVersion, buildToolsVersion).each {
+-    runInstall(sdkDir, it)
++def workers = []
++buildComponents(sdkDir, compileSdkVersion, buildToolsVersion).each { component -&gt;
++    workers.add(Thread.start{ runInstall(sdkDir, component) })
+ }
++workers*.join()
+&lt;/code&gt;&lt;/pre&gt;
+</content>
+  </entry>
   <entry>
     <title>Androidのiframeのイベントハンドリング</title>
     <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/20/39.html"/>
@@ -744,236 +796,6 @@ loadDataWithBaseURL(&amp;quot;&amp;quot;, content, &amp;quot;text/html&amp;quot;
 よく分からないけどこの生活が癖になってしまって、とにかく昼間眠い。&lt;/p&gt;
 
 &lt;p&gt;&lt;img src="https://github.com/rejasupotaro/KinMozaViewer/blob/master/screenshot.png?raw=true" alt=""&gt;&lt;/p&gt;
-</content>
-  </entry>
-  <entry>
-    <title>ListViewのデータのbindはこうする2014</title>
-    <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/06/34.html"/>
-    <id>http://rejasupotaro.github.io/2014/02/06/34.html</id>
-    <published>2014-02-06T00:00:00+09:00</published>
-    <updated>2014-02-12T14:14:50+09:00</updated>
-    <author>
-      <name>rejasupotaro</name>
-    </author>
-    <content type="html">&lt;p&gt;基本の割に初心者にとって使うのにハードルが高いview、ListView。
-ネット調べると色んなパターンで書かれた例が出てくると思います。&lt;/p&gt;
-
-&lt;p&gt;何も知らずにAndroid 1.6とかの時代に書かれたような出どころが不明なサンプルコードをコピペしてうまくいかなくて心が折れるみたいなことを防ぐために、インターネットに出回っているサンプルコードをパターン化して列挙しました。パターン1が一番良くなくて、パターン3あるいはパターン4にするといいと思います。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src="http://www.geek.com/wp-content/uploads/2009/10/settings.JPG" width="120"&gt;&lt;/p&gt;
-
-&lt;p&gt;インターネットで調べててAndroid 1.6とか2系の葬式UIが出てきたら、それは昔に書かれたものでそっと閉じたほうがいいです。&lt;/p&gt;
-
-&lt;h1&gt;Adapterとは&lt;/h1&gt;
-
-&lt;p&gt;AdapterはviewとDataSourceの橋渡しをするものです。&lt;/p&gt;
-
-&lt;p&gt;&lt;a href="http://www.edureka.in/blog/what-are-adapters-in-android/"&gt;&lt;img src="http://www.edureka.in/blog/wp-content/uploads/2013/03/adapters.jpg" alt=""&gt;&lt;/a&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;private void setupListView(List&amp;lt;User&amp;gt; userList) {
-    UserAdapter adapter = new UserAdapter(context, resourceId, userList);
-    // Viewに直接データを渡すのではなく、Adapterを渡す
-    mListView.setAdapter(adapter);
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;そして、viewは生成のコストが高いので、AndroidフレームワークにViewを使い回すしくみがあります。&lt;/p&gt;
-
-&lt;p&gt;&lt;a href="http://android.amberfog.com/?p=296"&gt;&lt;img src="http://android.amberfog.com/wp-content/uploads/2010/02/listview_recycler.jpg" alt=""&gt;&lt;/a&gt;&lt;/p&gt;
-
-&lt;h1&gt;1. viewがgetされるたびに生成&lt;/h1&gt;
-
-&lt;p&gt;viewが描画位置に入るとgetViewが呼ばれて、viewを生成して返すとそれが描画されます。
-recycle poolの存在を知らないと、その都度生成してしまってListViewの描画がガタガタになります(僕も昔やってました)。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;public class SampleAdapter1 extends ArrayAdapter&amp;lt;User&amp;gt; {
-
-    public SampleAdapter1(Context context, int resource, List&amp;lt;User&amp;gt; objects) {
-        super(context, resource, objects);
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        View view = View.inflate(getContext(), R.layout.list_item_user, parent);
-
-        User user = getItem(position);
-
-        TextView numberTextView = (TextView) view.findViewById(R.id.number);
-        numberTextView.setText(String.valueOf(position));
-
-        ImageView userThumbnailImageView = (ImageView) view.findViewById(R.id.user_thumbnail);
-        new SetBitmapFromNetworkTask(userThumbnailImageView).execute(user.getThumbnailUrl());
-
-        TextView userNameTextView = (TextView) view.findViewById(R.id.user_name);
-        userNameTextView.setText(user.getName());
-
-        TextView userBiographyTextView = (TextView) view.findViewById(R.id.user_biography);
-        userBiographyTextView.setText(user.getBiography());
-
-        return view;
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1&gt;2. convertViewがnullのときにだけ生成&lt;/h1&gt;
-
-&lt;p&gt;recycle poolからreuseされたviewはconvertViewに入ってくるので、convertViewがnullじゃなければ、中身だけを書き換えて再利用するようにしたコードが以下です。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;public class SampleAdapter2 extends ArrayAdapter&amp;lt;User&amp;gt; {
-
-    public SampleAdapter2(Context context, int resource, List&amp;lt;User&amp;gt; objects) {
-        super(context, resource, objects);
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        if (convertView == null) {
-            convertView = View.inflate(getContext(), R.layout.list_item_user, parent);
-        }
-
-        User user = getItem(position);
-
-        TextView numberTextView = (TextView) convertView.findViewById(R.id.number);
-        numberTextView.setText(String.valueOf(position));
-
-        ImageView userThumbnailImageView = (ImageView) convertView.findViewById(R.id.user_thumbnail);
-        new SetBitmapFromNetworkTask(userThumbnailImageView).execute(user.getThumbnailUrl());
-
-        TextView userNameTextView = (TextView) convertView.findViewById(R.id.user_name);
-        userNameTextView.setText(user.getName());
-
-        TextView userBiographyTextView = (TextView) convertView.findViewById(R.id.user_biography);
-        userBiographyTextView.setText(user.getBiography());
-
-        return convertView;
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1&gt;3. convertViewがnullのときにだけ生成 + ViewHolderにviewをキャッシュ&lt;/h1&gt;
-
-&lt;p&gt;convertViewが使いまわされたリストの一行のviewなのですが、その中のviewを毎回探索するのは無駄なので、ViewHolderクラスを作ってキャッシュさせます。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;public class SampleAdapter3 extends ArrayAdapter&amp;lt;User&amp;gt; {
-
-    private static class ViewHolder {
-        TextView numberTextView;
-        ImageView userThumbnailImageView;
-        TextView userNameTextView;
-        TextView userBiographyTextView;
-
-        public ViewHolder(View view) {
-            this.numberTextView = (TextView) view.findViewById(R.id.number);
-            this.userThumbnailImageView = (ImageView) view.findViewById(R.id.user_thumbnail);
-            this.userNameTextView = (TextView) view.findViewById(R.id.user_name);
-            this.userBiographyTextView = (TextView) view.findViewById(R.id.user_biography);
-        }
-    }
-
-    public SampleAdapter3(Context context, int resource, List&amp;lt;User&amp;gt; objects) {
-        super(context, resource, objects);
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder holder;
-        if (convertView == null) {
-            convertView = View.inflate(getContext(), R.layout.list_item_user, parent);
-            holder = new ViewHolder(convertView);
-            convertView.setTag(holder);
-        } else {
-            holder = (ViewHolder) convertView.getTag();
-        }
-
-        User user = getItem(position);
-
-        holder.numberTextView.setText(String.valueOf(position));
-        new SetBitmapFromNetworkTask(holder.userThumbnailImageView).execute(user.getThumbnailUrl());
-        holder.userNameTextView.setText(user.getName());
-        holder.userBiographyTextView.setText(user.getBiography());
-
-        return convertView;
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1&gt;4. BindableAdapterを使う&lt;/h1&gt;
-
-&lt;p&gt;「convertViewがnullのときは新しくviewを生成して、nullじゃなかったらViewに値をセットして」をコードに落としこむとこうなる感じです。
-IDEのデフォルト機能でViewHolder以外のコードを生成できるので、コンストラクタの引数で迷わないし、型パラメータのおかげでitemをそのままViewにbindできる。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;public class SampleAdapter4 extends BindableAdapter&amp;lt;User&amp;gt; {
-
-    public SampleAdapter4(Context context, List&amp;lt;User&amp;gt; episodeList) {
-        super(context, episodeList);
-    }
-
-    private static class ViewHolder {
-        private TextView numberTextView;
-        private ImageView userThumbnailImageView;
-        private TextView userNameTextView;
-        private TextView userBiographyTextView;
-
-        ViewHolder(View view) {
-            numberTextView = (TextView) view.findViewById(R.id.number);
-            userThumbnailImageView = (ImageView) view.findViewById(R.id.user_thumbnail);
-            userNameTextView = (TextView) view.findViewById(R.id.user_name);
-            userBiographyTextView = (TextView) view.findViewById(R.id.user_biography);
-        }
-    }
-
-    @Override
-    public View newView(LayoutInflater inflater, int position, ViewGroup container) {
-        View view =  inflater.inflate(R.layout.list_item_user, container, false);
-        ViewHolder holder = new ViewHolder(view);
-        view.setTag(holder);
-        return view;
-    }
-
-    @Override
-    public void bindView(User item, int position, View view) {
-        ViewHolder holder = (ViewHolder) view.getTag();
-
-        holder.numberTextView.setText(String.valueOf(position));
-        new SetBitmapFromNetworkTask(holder.userThumbnailImageView).execute(item.getThumbnailUrl());
-        holder.userNameTextView.setText(item.getName());
-        holder.userBiographyTextView.setText(item.getBiography());
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;public abstract class BindableAdapter&amp;lt;T&amp;gt; extends ArrayAdapter&amp;lt;T&amp;gt; {
-
-    private LayoutInflater mInflater;
-
-    public BindableAdapter(Context context, List&amp;lt;T&amp;gt; episodeList) {
-        super(context, 0, episodeList);
-        setup(context);
-    }
-
-    private void setup(Context context) {
-        mInflater = LayoutInflater.from(context);
-    }
-
-    @Override
-    public final View getView(int position, View view, ViewGroup container) {
-        if (view == null) {
-            view = newView(mInflater, position, container);
-            if (view == null) {
-                throw new IllegalStateException(&amp;quot;newView result must not be null.&amp;quot;);
-            }
-        }
-        bindView(getItem(position), position, view);
-        return view;
-    }
-
-    public abstract View newView(LayoutInflater inflater, int position, ViewGroup container);
-
-    public abstract void bindView(T item, int position, View view);
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;でもViewHolderを手で書いたり、pluginで生成するのもあれなんですよね、 &lt;strong&gt;まさか来週の&lt;a href="https://github.com/potatotips/potatotips/wiki/potatotips-4"&gt;potatotips&lt;/a&gt;で@__gfx__さんがgradleでxmlからジャバコードを自動生成するわけじゃあるまいし(前フリ)&lt;/strong&gt;&lt;/p&gt;
 </content>
   </entry>
 </feed>
