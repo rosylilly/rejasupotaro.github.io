@@ -106,7 +106,7 @@
     <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/28/41.html"/>
     <id>http://rejasupotaro.github.io/2014/02/28/41.html</id>
     <published>2014-02-28T00:00:00+09:00</published>
-    <updated>2014-03-02T08:31:47+09:00</updated>
+    <updated>2014-03-02T08:35:39+09:00</updated>
     <author>
       <name>rejasupotaro</name>
     </author>
@@ -148,9 +148,10 @@
 
 &lt;h1&gt;ゲストのプロフィールを表示するようにしました&lt;/h1&gt;
 
-&lt;p&gt;このアプリの目指しているところがコンテキストの共有だったりするので、誰が話してるとか、何を話してるとかが重要だなと思っています。Show Notesについてはサムネイルを表示することで、クリック率が上がったんじゃないかなと思います(数字は取ってないので適当なことを言っています)。&lt;/p&gt;
+&lt;p&gt;このアプリの目指しているところがコンテキストの共有だったりするので、誰が話してるとか、何を話してるとかを大切にしたいと思っています。&lt;/p&gt;
 
-&lt;p&gt;そんな感じで、ゲストの情報も今まではツイッター名が青くなってるだけだったので、「タイムライン画面がネイティブになりました」のときにtwitter4jを入れたので、ついでにゲストの情報を取得して表示するようにしました。&lt;/p&gt;
+&lt;p&gt;Show Notesについてはサムネイルを表示することで、クリック率が上がったんじゃないかなと思います(数字は取ってないので適当なことを言っています)。
+そんな感じで、ゲストの情報を取得して表示するようにしました。&lt;/p&gt;
 
 &lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201403/guests.png" alt=""&gt;&lt;/p&gt;
 
