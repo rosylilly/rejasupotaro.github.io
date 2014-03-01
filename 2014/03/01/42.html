@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="IE=edge;chrome=1" http-equiv="X-UA-Compatible" />
+    <title>マスタリングListView (2) Linkify、追加読み込み - Rejasupoem</title><link rel="alternate" type="application/atom+xml" title="Atom Feed" href="/feed.xml" /><link href="/stylesheets/all.css?1393716712" media="all" rel="stylesheet" type="text/css" /><link href="/images/favicon.ico" rel="icon" type="image/ico" />
+  </head>
+  <body>
+    <link href="http://yandex.st/highlightjs/8.0/styles/solarized_light.min.css" rel="stylesheet" type="text/css" />
+    <script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+    <script type="text/javascript">
+      hljs.initHighlightingOnLoad();
+    </script>
+    <header class="header">
+      <div class="header-inner"><a href="/">
+        <div class="header-image">
+          <img width="100" height="100" class="header-image-element" src="/images/rejasupotaro.jpg?1393716712" />
+        </div>
+        <div class="header-text">
+          <h1 class="header-text-title">
+            Rejasupoem
+          </h1>
+          <p class="header-text-description">
+            deliver value to customers continuously or die;
+          </p>
+        </div></a>
+        
+      </div>
+    </header>
+    <hr />
+    <div class="main">
+      <div class="main-inner main-inner-single-article"><article class="main-article">
+  <div class="main-article-header">
+    <h1 class="main-article-header-title">
+      マスタリングListView (2) Linkify、追加読み込み
+    </h1>
+    <div class="main-article-header-date">
+      2014-03-01
+    </div>
+  </div><p><a href="http://rejasupotaro.github.io/2014/02/06/34.html">マスタリングListView (1) データのbind</a>の続きです。</p>
+
+<h1>リンクを開く</h1>
+
+<p>いきなりListViewの話じゃないんだけど、TextViewでURL、@mention、#hashを開けるようにしたい。</p>
+
+<pre><code class="java">ViewUtils.setTweetText(tweetTextView, text);
+</code></pre>
+
+<p>ってやるとリンクが有効になるようにしたい。</p>
+
+<p>そういうときにはLinkifyのフィルターにマッチするように正規表現を書くとできます。</p>
+
+<pre><code class="java">public final class ViewUtils {
+
+    public static void setTweetText(TextView textView, String text) {
+        textView.setText(text);
+
+        Linkify.TransformFilter filter = new Linkify.TransformFilter() {
+            public final String transformUrl(final Matcher match, String url) {
+                return match.group();
+            }
+        };
+
+        Pattern mentionPattern = Pattern.compile(&quot;@([A-Za-z0-9_-]+)&quot;);
+        String mentionScheme = &quot;http://www.twitter.com/&quot;;
+        Linkify.addLinks(textView, mentionPattern, mentionScheme, null, filter);
+
+        Pattern hashtagPattern = Pattern.compile(&quot;#([A-Za-z0-9_-]+)&quot;);
+        String hashtagScheme = &quot;http://www.twitter.com/search/&quot;;
+        Linkify.addLinks(textView, hashtagPattern, hashtagScheme, null, filter);
+
+        Pattern urlPattern = Patterns.WEB_URL;
+        Linkify.addLinks(textView, urlPattern, null, null, filter);
+    }
+
+    ...
+</code></pre>
+
+<h1>追加読み込みをする</h1>
+
+<p>ListViewを一番したまでスクロールしたときに追加読み込みするようにしたい。</p>
+
+<p>一番下までスクロールしたときにコールバックするリスナーを作りました。</p>
+
+<pre><code class="java">public abstract class EndlessScrollListener implements AbsListView.OnScrollListener {
+
+    private ListView listView;
+
+    public EndlessScrollListener(ListView listView) {
+        this.listView = listView;
+    }
+
+    @Override
+    public void onScroll(AbsListView view, int firstVisibleItem,
+            int visibleItemCount, int totalItemCount) {
+        if (isEndOfList()) {
+            onLoadMore();
+        }
+    }
+
+    private boolean isEndOfList() {
+        if (listView.getAdapter() == null || listView.getChildCount() == 0) {
+            return false;
+        }
+
+        int totalItemCount = listView.getAdapter().getCount() - 1;
+        int lastItemBottomPosition = listView.getChildAt(listView.getChildCount() - 1).getBottom();
+        return (listView.getLastVisiblePosition() == totalItemCount)
+                &amp;&amp; (lastItemBottomPosition &lt;= listView.getHeight());
+    }
+
+    public abstract void onLoadMore();
+
+    @Override
+    public void onScrollStateChanged(AbsListView view, int scrollState) {
+    }
+}
+</code></pre>
+
+<p>ListViewはハマりどころが多いと思う。</p>
+
+</article>
+<p>
+  <a class="twitter-share-button">"https://twitter.com/share" "Tweet"</a> 
+  <script type="text/javascript">
+    !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+  </script>
+</p>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-copyright">
+          Copyright &copy; 2013 by <a target="_blank" href="http://twitter.com/rejasupotaro">@rejasupotaro</a>
+        </p>
+        <p class="footer-powers">
+          Powered by <a href="https://github.com/r7kamura/r7kamura.github.io">Github</a> & <a href="https://github.com/r7kamura/sitespec">Sitespec</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

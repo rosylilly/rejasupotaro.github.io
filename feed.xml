@@ -5,10 +5,227 @@
   <id>http://rejasupotaro.github.io/</id>
   <link href="http://rejasupotaro.github.io/"/>
   <link href="http://rejasupotaro.github.io/feed.xml" rel="self"/>
-  <updated>2014-02-22T00:00:00+09:00</updated>
+  <updated>2014-03-01T00:00:00+09:00</updated>
   <author>
     <name>rejasupotaro</name>
   </author>
+  <entry>
+    <title>マスタリングListView (2) Linkify、追加読み込み</title>
+    <link rel="alternate" href="http://rejasupotaro.github.io/2014/03/01/42.html"/>
+    <id>http://rejasupotaro.github.io/2014/03/01/42.html</id>
+    <published>2014-03-01T00:00:00+09:00</published>
+    <updated>2014-03-02T01:04:38+09:00</updated>
+    <author>
+      <name>rejasupotaro</name>
+    </author>
+    <content type="html">&lt;p&gt;&lt;a href="http://rejasupotaro.github.io/2014/02/06/34.html"&gt;マスタリングListView (1) データのbind&lt;/a&gt;の続きです。&lt;/p&gt;
+
+&lt;h1&gt;リンクを開く&lt;/h1&gt;
+
+&lt;p&gt;いきなりListViewの話じゃないんだけど、TextViewでURL、@mention、#hashを開けるようにしたい。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class="java"&gt;ViewUtils.setTweetText(tweetTextView, text);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;ってやるとリンクが有効になるようにしたい。&lt;/p&gt;
+
+&lt;p&gt;そういうときにはLinkifyのフィルターにマッチするように正規表現を書くとできます。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class="java"&gt;public final class ViewUtils {
+
+    public static void setTweetText(TextView textView, String text) {
+        textView.setText(text);
+
+        Linkify.TransformFilter filter = new Linkify.TransformFilter() {
+            public final String transformUrl(final Matcher match, String url) {
+                return match.group();
+            }
+        };
+
+        Pattern mentionPattern = Pattern.compile(&amp;quot;@([A-Za-z0-9_-]+)&amp;quot;);
+        String mentionScheme = &amp;quot;http://www.twitter.com/&amp;quot;;
+        Linkify.addLinks(textView, mentionPattern, mentionScheme, null, filter);
+
+        Pattern hashtagPattern = Pattern.compile(&amp;quot;#([A-Za-z0-9_-]+)&amp;quot;);
+        String hashtagScheme = &amp;quot;http://www.twitter.com/search/&amp;quot;;
+        Linkify.addLinks(textView, hashtagPattern, hashtagScheme, null, filter);
+
+        Pattern urlPattern = Patterns.WEB_URL;
+        Linkify.addLinks(textView, urlPattern, null, null, filter);
+    }
+
+    ...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1&gt;追加読み込みをする&lt;/h1&gt;
+
+&lt;p&gt;ListViewを一番したまでスクロールしたときに追加読み込みするようにしたい。&lt;/p&gt;
+
+&lt;p&gt;一番下までスクロールしたときにコールバックするリスナーを作りました。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class="java"&gt;public abstract class EndlessScrollListener implements AbsListView.OnScrollListener {
+
+    private ListView listView;
+
+    public EndlessScrollListener(ListView listView) {
+        this.listView = listView;
+    }
+
+    @Override
+    public void onScroll(AbsListView view, int firstVisibleItem,
+            int visibleItemCount, int totalItemCount) {
+        if (isEndOfList()) {
+            onLoadMore();
+        }
+    }
+
+    private boolean isEndOfList() {
+        if (listView.getAdapter() == null || listView.getChildCount() == 0) {
+            return false;
+        }
+
+        int totalItemCount = listView.getAdapter().getCount() - 1;
+        int lastItemBottomPosition = listView.getChildAt(listView.getChildCount() - 1).getBottom();
+        return (listView.getLastVisiblePosition() == totalItemCount)
+                &amp;amp;&amp;amp; (lastItemBottomPosition &amp;lt;= listView.getHeight());
+    }
+
+    public abstract void onLoadMore();
+
+    @Override
+    public void onScrollStateChanged(AbsListView view, int scrollState) {
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;ListViewはハマりどころが多いと思う。&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>ver 0.3.0をリリースしました</title>
+    <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/28/41.html"/>
+    <id>http://rejasupotaro.github.io/2014/02/28/41.html</id>
+    <published>2014-02-28T00:00:00+09:00</published>
+    <updated>2014-03-02T08:31:47+09:00</updated>
+    <author>
+      <name>rejasupotaro</name>
+    </author>
+    <content type="html">&lt;p&gt;&lt;img src="https://raw2.github.com/rejasupotaro/Rebuild/master/screenshot.png" alt=""&gt;&lt;/p&gt;
+
+&lt;p&gt;主な変更点は以下のとおりです。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;タイムライン画面がネイティブになりました&lt;/li&gt;
+&lt;li&gt;通知からエピソード詳細画面が開けるようになりました (&lt;a href="https://twitter.com/hotchemi"&gt;@hotchemi&lt;/a&gt;さんがやってくれました！)&lt;/li&gt;
+&lt;li&gt;ゲストのプロフィールを表示するようにしました&lt;/li&gt;
+&lt;li&gt;RSSの取得、エピソードのストリーミング、エピソードのダウンロード時にUserAgentを付けるようにしました&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1&gt;UserAgentを付けるようにしました&lt;/h1&gt;
+
+&lt;p&gt;まず一番大事な変更を紹介します。&lt;/p&gt;
+
+&lt;p&gt;&lt;blockquote class="twitter-tweet" lang="en"&gt;&lt;a href="{% oembed https://twitter.com/miyagawa/status/439711500446359552 %}"&gt;&lt;/a&gt;&lt;/blockquote&gt;&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;&lt;/p&gt;
+
+&lt;p&gt;まだそんなにユーザー多くないと思って油断してたけど、バグがあるとmiyagawaさんに迷惑が掛かるということを思い出して、ああーっ、うちの子がすいませんと思いながら脳を高速で回転させながら、原因が分からなかったら一時的に公開を取り下げようなどと考えつつ、ひたすらデバッグしていました。&lt;/p&gt;
+
+&lt;p&gt;&lt;blockquote class="twitter-tweet" lang="en"&gt;&lt;a href="{% oembed https://twitter.com/miyagawa/status/439722404101640192 %}"&gt;&lt;/a&gt;&lt;/blockquote&gt;&lt;script async src="//platform.twitter.com/widgets.js" charset="utf-8"&gt;&lt;/script&gt;&lt;/p&gt;
+
+&lt;p&gt;しばらくしたら、どうやらNexus 5のChromeで何か問題があったらしいということが分かって、ああーっ、うちの子じゃなくて良かったーと、すごい焦りました。&lt;/p&gt;
+
+&lt;p&gt;デバッグしてるときにそういえばUAが付けていないと思って、何か問題が起こったときのためにUAを付けるようにしました。&lt;/p&gt;
+
+&lt;p&gt;UAの中身は下のようにしました。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;パッケージ名/バージョンコード; Android/OSバージョン; モデル名; キャリア名;
+例. rejasupotaro.rebuild/3000; Android/18; SC-04E; NTT+DOCOMO;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1&gt;タイムライン画面がネイティブになりました&lt;/h1&gt;
+
+&lt;p&gt;今まではTiwtter WidgetをWebViewで無理やり表示していたのですが、iframeのイベントハンドリングに難があったので、ネイティブで実装し直しました。
+急いで作ったのでまだ見た目がデフォルトのListViewのままだったり、TextViewのイベントが奪われてタップしづらかったり、色々あるので次バージョンで改善します。&lt;/p&gt;
+
+&lt;h1&gt;ゲストのプロフィールを表示するようにしました&lt;/h1&gt;
+
+&lt;p&gt;このアプリの目指しているところがコンテキストの共有だったりするので、誰が話してるとか、何を話してるとかが重要だなと思っています。Show Notesについてはサムネイルを表示することで、クリック率が上がったんじゃないかなと思います(数字は取ってないので適当なことを言っています)。&lt;/p&gt;
+
+&lt;p&gt;そんな感じで、ゲストの情報も今まではツイッター名が青くなってるだけだったので、「タイムライン画面がネイティブになりました」のときにtwitter4jを入れたので、ついでにゲストの情報を取得して表示するようにしました。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201403/guests.png" alt=""&gt;&lt;/p&gt;
+
+&lt;p&gt;UIはまだ作り途中なのですが、デザイン変更にあたって事例を調べていました。&lt;/p&gt;
+
+&lt;p&gt;下にずらっとスクリーンショットを並べたのですが、スクリーンショットは左から、&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://play.google.com/store/apps/details?id=au.com.shiftyjelly.pocketcasts"&gt;Pocket Casts&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://play.google.com/store/apps/details?id=com.soundcloud.android"&gt;SoundCloud - Music &amp;amp; Audio&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://play.google.com/store/apps/details?id=com.sothree.umano"&gt;Umano : ニュースリスニング&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://play.google.com/store/apps/details?id=com.google.android.music"&gt;Google Play Music&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://play.google.com/store/apps/details?id=com.stitcher.app"&gt;Stitcher Radio&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://play.google.com/store/apps/details?id=de.danoeh.antennapod"&gt;AntennaPod&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://play.google.com/store/apps/details?id=com.bambuna.podcastaddict"&gt;Podcast Addict&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;です。&lt;/p&gt;
+
+&lt;h2&gt;詳細画面&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/episode_detail.png" alt=""&gt;&lt;/p&gt;
+
+&lt;h2&gt;リスト画面&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/episode_list.png" alt=""&gt;&lt;/p&gt;
+
+&lt;h2&gt;ロックスクリーン&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/notification.png" alt=""&gt;&lt;/p&gt;
+
+&lt;h2&gt;通知&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/lock_screen.png" alt=""&gt;&lt;/p&gt;
+
+&lt;p&gt;全体的にSoundCloudのUIがよくできていて、見ている人が時間を指定してコメント付けられるようになっていて、これがまた操作感もよかったりして、ニコニコRebuildワンチャンと思いました。&lt;/p&gt;
+
+&lt;h1&gt;ver 1.0.0に向けて&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201403/paper_proto.png" alt=""&gt;&lt;/p&gt;
+
+&lt;p&gt;UIはこれ自体もまだプロトタイプなので、引き続き検討していきますが、ver 1.0.0に下で書いてあるようなことは実装したいです。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;エピソード詳細画面のUI改善&lt;/li&gt;
+&lt;li&gt;再生速度変更&lt;/li&gt;
+&lt;li&gt;ロックスクーンでの再生切り替え&lt;/li&gt;
+&lt;li&gt;タブレット対応&lt;/li&gt;
+&lt;li&gt;Transcriptのリンクの表示&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1&gt;コントリビューター様へ&lt;/h1&gt;
+
+&lt;p&gt;twitterのAPIを使うにあたってキーが必要だったのですが、それは公開できないのでGraldeの機能のproductFlavorsを使ってクラスを分けるようにしました。&lt;/p&gt;
+
+&lt;p&gt;僕の手元ではproductのTwitterApiClientで開発していて、このクラスの中にキーとかも入っています。
+ただしproductはignoreしてて見れないようになっているので、開発を手伝ってくれるときはBuild VariantをstagingDebugにして、staging(実際にステージングなわけではないので名前が相応しくないですが)のTwitterApiClientを見るようにしてください。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201403/project_structure.png" width="300"&gt;&lt;/p&gt;
+
+&lt;p&gt;productとstagingで同じインタフェースにしていて、stagingの方はproductと同じ構造のダミーデータを返すようにしています。
+GradleのpropertiesやbuildTypesで値だけを分けることもできたのですが、そうするとstagingで動かすために別途キーを用意しないといけなくなるので、今回はこのようにしました。&lt;/p&gt;
+
+&lt;p&gt;今後ともよろしくお願いします。&lt;/p&gt;
+
+&lt;h1&gt;リアリティと弾力&lt;/h1&gt;
+
+&lt;p&gt;日々数十万、数百万っていうユーザーを相手にしてると、数が多すぎて段々リアリティがなくなってしまうという問題があるのだけど、このアプリは結構知り合いとか、インターネット界隈の人が使ってると思うので、バグを直しているときもその人たちの顔が浮かんできて、すごいリアリティと緊張感がある。&lt;/p&gt;
+
+&lt;p&gt;一般的な話として、ユーザーからすると開発者の顔は見えないし、向こうに人がいるという感覚が薄いからレビューで辛辣なことを書いたりするし、一方で開発者は日々リアリティと弾力を失っていってユーザーの顔が薄れていくということがあると思う。
+なので、開発者はいかにリアリティと弾力を失わないようにするかが大切だと思うし、僕はこのアプリを作ってるとそのことを思い出す。&lt;/p&gt;
+
+&lt;p&gt;開発者とユーザーの距離を縮めていければいいなと思うし、まずは開発者から歩み寄っていきたいと思うので、まずはみんなのサブディスプレイにユーザーの笑顔をエンドレスで流すようにしたい。&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>自動でAndroid SDKをセットアップする</title>
     <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/22/40.html"/>
@@ -464,340 +681,6 @@ Androidで使えるRSSクライアントが見当たらなかったので、SAXP
 &lt;/ul&gt;
 
 &lt;p&gt;どうぞよろしくお願いします。&lt;/p&gt;
-</content>
-  </entry>
-  <entry>
-    <title>How to build a career through github activities</title>
-    <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/11/36.html"/>
-    <id>http://rejasupotaro.github.io/2014/02/11/36.html</id>
-    <published>2014-02-11T00:00:00+09:00</published>
-    <updated>2014-02-12T14:15:38+09:00</updated>
-    <author>
-      <name>rejasupotaro</name>
-    </author>
-    <content type="html">&lt;script async class="speakerdeck-embed" data-id="d07deda0755701312eb91a125ab0a9e4" data-ratio="1.33333333333333" src="//speakerdeck.com/assets/embed.js"&gt;&lt;/script&gt;
-
-&lt;p&gt;&lt;a href="https://github.com/potatotips/potatotips/wiki/potatotips-4"&gt;potatotips-4&lt;/a&gt; で自分が作ったライブラリをどうやって使ってもらうかという話をしました。
-元ネタはninjinkunさんの&lt;a href="http://www.slideshare.net/ninjinkun/i-os-30692824"&gt;GitHub活動を通して個人のキャリアを積みつつ仕事の成果を出す方法&lt;/a&gt;です。
-持ち時間が5分だったので、時間の都合上端折った箇所を補足します。&lt;/p&gt;
-
-&lt;h1&gt;1. 試しやすくする&lt;/h1&gt;
-
-&lt;h3&gt;サンプルアプリを付ける　&lt;/h3&gt;
-
-&lt;p&gt;サンプルがあるとどういう動きをするのか実際にさわって分かるというのと、それ自体がドキュメントとしての役割を持つので、ライブラリ導入のハードルを下げると思います。
-それと、ライブラリを開発しているときも一旦どこかにデプロイして〜とかしなくてもよくなるので、開発スピードが上がります。&lt;/p&gt;
-
-&lt;h1&gt;2. 組み込みやすくする&lt;/h1&gt;
-
-&lt;p&gt;いざ自分のプロジェクトにライブラリを入れようと思ったときに、インストールの仕方が書いてないとアッアッとなります。
-そこで開発者が離れていってしまうのはもったいないので、インストール手順は書いた方がいいです。&lt;/p&gt;
-
-&lt;h3&gt;githubにrepositoryとして使う&lt;/h3&gt;
-
-&lt;p&gt;maven-metadata.xmlとファイルの実体さえあえば、どこでもmavenリポジトリにすることができます。
-gradleの例ですが、以下のような記述を &lt;code&gt;projectDir/build.gradle&lt;/code&gt; に追加して、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="groovy"&gt;apply plugin: &amp;#39;android-library&amp;#39;
-apply plugin: &amp;#39;maven&amp;#39;
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            repository url: &amp;quot;file://${projectDir}/repository&amp;quot;
-            pom.groupId = &amp;#39;rejasupotaro&amp;#39;
-            pom.artifactId = &amp;#39;my-library&amp;#39;
-            pom.version = &amp;#39;0.0.1&amp;#39;
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;コマンドを実行すると、&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="sh"&gt;$ gradle uploadArchives
-$ tree repository
-repository
-└── rejasupotaro
-    └── my-library
-        ├── 0.0.1
-        │   ├── my-library-0.0.1.aar
-        │   ├── my-library-0.0.1.aar.md5
-        │   ├── my-library-0.0.1.aar.sha1
-        │   ├── my-library-0.0.1.pom
-        │   ├── my-library-0.0.1.pom.md5
-        │   └── my-library-0.0.1.pom.sha1
-        ├── maven-metadata.xml
-        ├── maven-metadata.xml.md5
-        └── maven-metadata.xml.sha1
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;このようになります。
-これをコミットしてプッシュします。&lt;/p&gt;
-
-&lt;h3&gt;github上のrepositoryからdependencyを解決する&lt;/h3&gt;
-
-&lt;p&gt;githubのファイルには &lt;code&gt;raw.github.com&lt;/code&gt; でアクセスできるので、repositoriesにgithubのurlを指定して、dependenciesに追加すれば、ライブラリを使うことができるようになります。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="groovy"&gt;repositories {
-    ...
-    maven { url &amp;#39;https://raw.github.com/rejasupotaro/MyLibrary/master/library/repository&amp;#39; }
-}
-
-dependencies {
-    ...
-    compile &amp;#39;rejasupotaro:my-library:0.0.1&amp;#39;
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2&gt;ローカルでjarにする&lt;/h2&gt;
-
-&lt;p&gt;リソースもいらないし手元で、jarに出来ればよいという場合には、以下のようにすればいいと思います。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;apply plugin: &amp;#39;java&amp;#39;
-
-group = &amp;#39;rejasupotaro&amp;#39;
-archivesBaseName = &amp;#39;my-library&amp;#39;
-version = &amp;#39;0.0.1&amp;#39;
-
-sourceSets {
-    main {
-        java {
-            srcDir &amp;#39;src/main/java&amp;#39;
-        }
-    }
-}
-
-dependencies {
-    compile fileTree(dir: &amp;#39;libs&amp;#39;, include: &amp;#39;*.jar&amp;#39;)
-}
-
-task sourcesJar(type: Jar) {
-    classifier = &amp;#39;sources&amp;#39;
-    from sourceSets.main.allSource
-}
-
-artifacts {
-    archives sourcesJar
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;code&gt;$ gradle jar&lt;/code&gt; を実行すると &lt;code&gt;src/main/java&lt;/code&gt; 以下のclassファイルとManifestのarchive(jar)が作成されます。&lt;/p&gt;
-
-&lt;p&gt;pluginが他のプラグインとぶつかるときは、環境変数で切り替えたりしています。
-たとえばjarを作るときはリリース時なので &lt;code&gt;$ gradle jar -Penv=release&lt;/code&gt; みたいな。&lt;/p&gt;
-
-&lt;h1&gt;3. 品質を高める&lt;/h1&gt;
-
-&lt;p&gt;テストをどう書くか、という話はここではしませんが、少なくともテストのないライブラリは積極的に使おうという気にはならないですよね。
-テストに加えて、CIが通ったバッチがREADMEについてると、なお安心感があります。&lt;/p&gt;
-
-&lt;p&gt;どのCIサービスを使うかという話ですが、好みがあると思いますが、僕は一応Wercker推しです。
-以下、非常に偏った比較です。&lt;/p&gt;
-
-&lt;h3&gt;Wercker&lt;/h3&gt;
-
-&lt;ul&gt;
-&lt;li&gt;何も書かなくてもデフォルトのビルドファイルを適用してくれる&lt;/li&gt;
-&lt;li&gt;あらかじめビルド環境(Box)が用意されている&lt;/li&gt;
-&lt;li&gt;&lt;a href="https://github.com/wercker/box-android"&gt;wercker / box-android&lt;/a&gt;が公開されてる&lt;/li&gt;
-&lt;li&gt;submoduleを自動で取ってきてくれる&lt;/li&gt;
-&lt;li&gt;あと何秒みたいなのが表示されたり、グラフィカルなBuild Statsがあったり、UIが洗練されている&lt;/li&gt;
-&lt;li&gt;ビルドがTravisと比べて速い&lt;/li&gt;
-&lt;li&gt;ログはリアルタイムに更新されない&lt;/li&gt;
-&lt;li&gt;デプロイまで面倒を見てくれる&lt;/li&gt;
-&lt;li&gt;まだβ版なので今後どうなるかは分からない&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3&gt;Circle CI&lt;/h3&gt;
-
-&lt;ul&gt;
-&lt;li&gt;ちょっと洗練されたTravis(イメージ)&lt;/li&gt;
-&lt;li&gt;結構ビジネスって使ってるって聞きます&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3&gt;Travis&lt;/h3&gt;
-
-&lt;ul&gt;
-&lt;li&gt;個人の開発者とか、OSSで一番よく使われている&lt;/li&gt;
-&lt;li&gt;最初は設定が面倒だけど、一度設定すれば設定ファイルをコピペでいける&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3&gt;サーバーのセットアップ&lt;/h3&gt;
-
-&lt;p&gt;社内のAndroidのビルド環境のセットアップを丹精込めて手作業で行なってきたけど、最近物忘れが激しくて &lt;code&gt;android…update…filter…?no-ui…???&lt;/code&gt; みたいにコマンドがうろ覚え状態ということもあり、CIサーバーのセットアップを自動化できないかと思って流行りのchefとかfabricとかserverspecとかを使ってみたけど、&lt;a href="https://github.com/embarkmobile/android-sdk-installer"&gt;android-sdk-installer&lt;/a&gt;を使うというところに落ち着きました。&lt;/p&gt;
-
-&lt;p&gt;これのいいところは、Travisを使っている人は分かると思いますが、毎回 &lt;code&gt;wait_for_emulator&lt;/code&gt; をコピペしていたのが、ツールの中に入ってるのが良かったです。&lt;/p&gt;
-
-&lt;h1&gt;4. 表現を工夫する&lt;/h1&gt;
-
-&lt;p&gt;UIのライブラリはgifアニメがあるだけで印象がだいぶ変わります。
-あとライセンスがREADMEに書いてあるものも、僕的にポイント高いです。&lt;/p&gt;
-
-&lt;p&gt;&lt;img height="200" src="https://github-camo.global.ssl.fastly.net/d20ac6fb1cb14db4b69ab5e48ebd609aab1f6831/687474703a2f2f6f70656e61706869642e6769746875622e636f6d2f696d616765732f666c6970766965772d686f72697a6f6e74616c2d64656d6f2e676966"&gt;
-&lt;img height="200" src="http://gifzo.net/jTEl4YmZqD.gif"&gt;
-&lt;img height="200" src="http://gifzo.net/BWvNCrQFYfF.gif"&gt;
-&lt;img height="200" src="http://gifzo.net/68NrYQW2tB.gif"&gt;
-&lt;img height="200" src="http://gifzo.net/lSwyh4fg6P.gif"&gt;
-&lt;img height="200" src="http://gifzo.net/OKyqq1D9yD.gif"&gt;&lt;/p&gt;
-
-&lt;p&gt;みたいな。&lt;/p&gt;
-
-&lt;h1&gt;5. 広報&lt;/h1&gt;
-
-&lt;p&gt;READMEはインストール方法とか、ライブラリの使い方とかしか書けないけど、ブログならどういう問題があって、どういうアプローチで解決したかみたいな背景も書けるので、そういうのを知ると使ってみようかなっていう気になるし、それに拡散できるのでよいです。&lt;/p&gt;
-
-&lt;h1&gt;おわりに&lt;/h1&gt;
-
-&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/activities.png" alt=""&gt;
-&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/aizen.png" alt=""&gt;&lt;/p&gt;
-</content>
-  </entry>
-  <entry>
-    <title>KinMozaView is updated!!</title>
-    <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/09/35.html"/>
-    <id>http://rejasupotaro.github.io/2014/02/09/35.html</id>
-    <published>2014-02-09T00:00:00+09:00</published>
-    <updated>2014-02-12T14:14:50+09:00</updated>
-    <author>
-      <name>rejasupotaro</name>
-    </author>
-    <content type="html">&lt;h2&gt;きんモザビューワーをアップデートしました！&lt;/h2&gt;
-
-&lt;p&gt;&lt;img src="https://github.com/rejasupotaro/KinMozaViewer/blob/master/screenshot.png?raw=true" alt=""&gt;&lt;/p&gt;
-
-&lt;h2&gt;主な変更点は2点！&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;自動再生機能を追加しました！&lt;/li&gt;
-&lt;li&gt;再生中に画面をスリープしないようにしました！&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src="https://github.com/rejasupotaro/KinMozaViewer/blob/master/screenshot.png?raw=true" alt=""&gt;&lt;/p&gt;
-
-&lt;p&gt;ダウンロード(というかビルド)は&lt;a href="https://github.com/rejasupotaro/KinMozaViewer"&gt;GitHub&lt;/a&gt;からどうぞ！&lt;/p&gt;
-
-&lt;p&gt;&lt;a href="http://rejasupotaro.github.io/2013/10/31/8.html"&gt;リリースしたときに書いたブログ&lt;/a&gt;はリンクを貼っただけだったので、ちょっと技術的な話をします。&lt;/p&gt;
-
-&lt;h2&gt;gifの表示について&lt;/h2&gt;
-
-&lt;p&gt;表示しているgifは&lt;a href="http://mogashi.hateblo.jp/entry/2013/09/24/000619"&gt;APIで取得している&lt;/a&gt;のですが、Androidでgifを表示するにはかなり頑張らないといけないので、WebViewで表示するようにしました。&lt;/p&gt;
-
-&lt;p&gt;assetsにテンプレートを置いておいて、APIで取得したURLと動的に取得した画面幅を組み込んで、loadDataWithBaseURLでコンテンツをWebViewに流しています。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;String imageUrl = UrlUtils.buildAliceUrl(ep, no);
-String content = mTemplate.compile(imageUrl);
-loadDataWithBaseURL(&amp;quot;&amp;quot;, content, &amp;quot;text/html&amp;quot;, HTTP.UTF_8, null);
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2&gt;自動再生について&lt;/h2&gt;
-
-&lt;p&gt;一定時間おきにタスクを実行するコードをよく書く気がしたので、汎用的なクラスを作りました。
-コンストラクタにRunnableとインターバル値を入れます。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;public class PeriodicTimerTask {
-
-    private Handler mHandler = new Handler();
-
-    private Runnable mTask;
-
-    private int mTaskIntervalMs;
-
-    private TimerTask mTimerTask;
-
-    private Timer mTimer;
-
-    private TimerTask newTimerTask() {
-        return new TimerTask() {
-            @Override
-            public void run() {
-                mHandler.post(mTask);
-            }
-        };
-    }
-
-    private Timer newTimer() {
-        return new Timer(true);
-    }
-
-    public PeriodicTimerTask(Runnable task, int taskIntervalMs) {
-        mTask = task;
-        mTaskIntervalMs = taskIntervalMs;
-    }
-
-    public void start() {
-        if (mTimer == null) {
-            mTimerTask = newTimerTask();
-            mTimer = newTimer();
-            mTimer.schedule(mTimerTask, 0, mTaskIntervalMs);
-        }
-    }
-
-    public void stop() {
-        if (mTimer != null) {
-            mTimer.cancel();
-            mTimer = null;
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;たとえばこのアプリでは、自動再生モードがオンのとき、SeekBarを一定時間おきに動かしています。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;public class MediaTimerTask extends PeriodicTimerTask {
-
-    private static final int TASK_INTERVAL_MS = 500;
-
-    private static final int PROGRESS_INCREMENT = 10;
-
-    public MediaTimerTask(final SeekBar seekBar) {
-        super(new Runnable() {
-            @Override
-            public void run() {
-                if (seekBar == null) {
-                    return;
-                }
-
-                int progress = seekBar.getProgress();
-                if (progress &amp;gt;= seekBar.getMax()) {
-                    progress = 0;
-                } else {
-                    progress += PROGRESS_INCREMENT;
-                }
-                seekBar.setProgress(progress);
-            }
-        }, TASK_INTERVAL_MS);
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;SeekBarでは進捗(Progress)に変化があったときに、進捗値から何章のどこら辺かを計算して、そのパラメータを付けてAPIを叩いて、画面を更新します。&lt;/p&gt;
-
-&lt;h2&gt;アプリをスリープさせない&lt;/h2&gt;
-
-&lt;p&gt;MainActivityのonCreate相当のところで下のような処理をしています。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class="java"&gt;private void keepScreenOn() {
-    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2&gt;アイコンを作る&lt;/h2&gt;
-
-&lt;p&gt;アイコンを作るのに&lt;a href="http://android-ui-utils.googlecode.com/hg/asset-studio/dist/index.html"&gt;Android Asset Studio&lt;/a&gt;を使おうとするんだけど、Android Asset Studioだと角丸ができないので、調べたら&lt;a href="http://www.gieson.com/Library/projects/utilities/icon_slayer/"&gt;Icon Slayer&lt;/a&gt;っていうのが出てきて、それを使っています。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/icon_generator.png" alt=""&gt;&lt;/p&gt;
-
-&lt;h2&gt;効果的な使用方法&lt;/h2&gt;
-
-&lt;p&gt;手元のAndroid搭載プロジェクタにこのアプリを入れて、部屋を暗くしてコードを書いてる後ろでエンドレスで再生し続けます。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src="https://dl.dropboxusercontent.com/u/54255753/blog/201402/projector.png" alt=""&gt;&lt;/p&gt;
-
-&lt;p&gt;6畳に物が散乱している狭い部屋を、生ぬるいくらいの温度にして、プロジェクタとノートPCの光だけが部屋を照らしている中、寝落ちするまでコードを書く。
-よく分からないけどこの生活が癖になってしまって、とにかく昼間眠い。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src="https://github.com/rejasupotaro/KinMozaViewer/blob/master/screenshot.png?raw=true" alt=""&gt;&lt;/p&gt;
 </content>
   </entry>
 </feed>
