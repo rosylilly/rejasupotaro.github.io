@@ -106,7 +106,7 @@
     <link rel="alternate" href="http://rejasupotaro.github.io/2014/02/28/41.html"/>
     <id>http://rejasupotaro.github.io/2014/02/28/41.html</id>
     <published>2014-02-28T00:00:00+09:00</published>
-    <updated>2014-03-02T08:41:03+09:00</updated>
+    <updated>2014-03-02T08:45:59+09:00</updated>
     <author>
       <name>rejasupotaro</name>
     </author>
@@ -134,12 +134,6 @@
 &lt;p&gt;しばらくしたら、どうやらNexus 5のChromeで何か問題があったらしいということが分かって、ああーっ、うちの子じゃなくて良かったーと、すごい焦りました。&lt;/p&gt;
 
 &lt;p&gt;デバッグしてるときにそういえばUAが付けていないと思って、何か問題が起こったときのためにUAを付けるようにしました。&lt;/p&gt;
-
-&lt;p&gt;UAの中身は下のようにしました。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;パッケージ名/バージョンコード; Android/OSバージョン; モデル名; キャリア名;
-例. rejasupotaro.rebuild/3000; Android/18; SC-04E; NTT+DOCOMO;
-&lt;/code&gt;&lt;/pre&gt;
 
 &lt;h1&gt;タイムライン画面がネイティブになりました&lt;/h1&gt;
 
