@@ -47,6 +47,8 @@ describe "This site" do
     get "/2014/02/18/38.html"
     get "/2014/02/20/39.html"
     get "/2014/02/22/40.html"
+    get "/2014/02/28/41.html"
+    get "/2014/03/01/42.html"
     get "/images/favicon.ico"
     get "/images/rejasupotaro.jpg"
     get "/images/arrow.png"
